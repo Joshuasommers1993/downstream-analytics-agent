@@ -57,9 +57,18 @@ import asyncio
 import threading
 import requests
 
-_API_BASE    = os.getenv("DOWNSTREAM_API_URL", "https://api.trydownstream.com")
-_API_KEY     = os.getenv("MCP_API_KEY", "")
-_API_HEADERS = {"X-API-KEY": _API_KEY, "Content-Type": "application/json"}
+_API_BASE         = os.getenv("DOWNSTREAM_API_URL", "https://api.trydownstream.com")
+_API_KEY          = os.getenv("MCP_API_KEY", "")
+_INSIGHT_HUB_KEY  = os.getenv("INSIGHT_HUB_API_KEY", "")
+_API_HEADERS      = {"X-API-KEY": _API_KEY, "Content-Type": "application/json"}
+_INSIGHT_HEADERS  = {"X-API-KEY": _INSIGHT_HUB_KEY, "Content-Type": "application/json"}
+
+
+def _headers_for(path: str) -> dict:
+    """Return the correct auth headers based on the API path."""
+    if path.startswith("/api/insight-hub/"):
+        return _INSIGHT_HEADERS
+    return _API_HEADERS
 
 
 def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
@@ -67,9 +76,10 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
     rows: list[dict] = []
     query = dict(params or {})
     query["limit"] = 100
+    headers = _headers_for(path)
 
     while True:
-        resp = requests.get(f"{_API_BASE}{path}", headers=_API_HEADERS, params=query, timeout=30)
+        resp = requests.get(f"{_API_BASE}{path}", headers=headers, params=query, timeout=30)
         resp.raise_for_status()
         data = resp.json()
 
@@ -77,7 +87,16 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
             rows.extend(data)
             break
 
-        page = data.get("data", data.get("results", []))
+        # Try known list keys in order; fall back to wrapping the whole response
+        for list_key in ("data", "results", "rows"):
+            if list_key in data:
+                page = data[list_key]
+                break
+        else:
+            # Response is a single object (e.g. insight-hub summary endpoints)
+            rows.append(data)
+            break
+
         rows.extend(page)
 
         if not data.get("has_more") or not page:
