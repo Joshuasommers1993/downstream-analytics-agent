@@ -1,0 +1,20 @@
+# Secrets
+.env
+
+# Private internal files
+agent/mcp_catalog.py
+schema/tables.py
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# ChromaDB vector index (regeneratable)
+schema_db/
