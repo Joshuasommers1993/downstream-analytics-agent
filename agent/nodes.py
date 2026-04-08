@@ -84,16 +84,27 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
         data = resp.json()
 
         if isinstance(data, list):
+            # Bare array response
             rows.extend(data)
             break
 
-        # Try known list keys in order; fall back to wrapping the whole response
+        # Try known paginated list keys first
+        page = None
         for list_key in ("data", "results", "rows"):
-            if list_key in data:
+            if list_key in data and isinstance(data[list_key], list):
                 page = data[list_key]
                 break
-        else:
-            # Response is a single object (e.g. insight-hub summary endpoints)
+
+        # Fall back: scan all values for the first non-empty list
+        # (covers insight-hub custom keys: months, states, categories, etc.)
+        if page is None:
+            for value in data.values():
+                if isinstance(value, list):
+                    page = value
+                    break
+
+        if page is None:
+            # Single-object response — wrap as one row
             rows.append(data)
             break
 
