@@ -15,7 +15,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "reveals_used (int), reveals_cap (int), user_group_id (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_enrichment_phone_reveal_quota_list": {
         "path": "/api/enrichment/phone-reveal/quota/",
@@ -37,7 +37,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "first_name (str), last_name (str), email (str), title (str), linkedin_url (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── INSIGHT HUB (pre-computed sales analytics) ────────────────────────────
@@ -300,7 +300,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "cart_value (float), order_group_count (int), order_count (int), invoice_total (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_admin_user_groups_goal_progress_aggregate_list": {
         "path": "/api/v1/admin/user-groups/goal-progress/aggregate/",
@@ -334,7 +334,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "company_size (str), employee_count (int), industry (str), revenue_range (str), linkedin_url (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_admin_user_groups_goal_progress_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/goal-progress/",
@@ -345,7 +345,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "user_group_id (int), user_group_name (str), target_gmv (float), actual_gmv (float), attainment_percent (float), order_count (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_admin_user_groups_notes_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/notes/",
@@ -356,7 +356,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "id (int), content (str), created_by (str), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_admin_user_groups_sales_state_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/sales-state/",
@@ -367,7 +367,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "sales_state (str), days_since_last_order (int), lifecycle_stage (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── ADVERTISEMENTS ────────────────────────────────────────────────────────
@@ -393,7 +393,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "id (int), title (str), image_url (str), target_url (str), placement (str), is_active (bool), start_date (date), end_date (date)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── BRANDS ────────────────────────────────────────────────────────────────
@@ -417,7 +417,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "id (int), name (str), slug (str), logo_url (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── DAY OF WEEKS ──────────────────────────────────────────────────────────
@@ -438,7 +438,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single day-of-week record by ID.",
         "fields": "id (int), name (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── FINANCIAL CONNECTION ──────────────────────────────────────────────────
@@ -474,7 +474,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single grouped invoice by ID with its constituent invoices.",
         "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── IDENTITY VERIFICATION ─────────────────────────────────────────────────
@@ -510,7 +510,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single industry by ID or slug.",
         "fields": "id (int), name (str), slug (str), sort_order (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_industries_popular_products_list": {
         "path": "/api/v1/industries/{id}/popular-products/",
@@ -524,7 +524,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "main_product_id (int), main_product_name (str), order_count (int), rank (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── INSURANCE POLICIES ────────────────────────────────────────────────────
@@ -547,7 +547,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single insurance policy by ID.",
         "fields": "id (int), account_type (str), type (str), status (str), effective_date (date), expiration_date (date), insurer (str), coverage_amount (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── INVOICES ──────────────────────────────────────────────────────────────
@@ -582,7 +582,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single invoice by ID with full details.",
         "fields": "id (int), number (str), status (str), total (float), amount_due (float), amount_remaining (float), due_date (date), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── KNOWLEDGE ─────────────────────────────────────────────────────────────
@@ -617,7 +617,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single knowledge document by ID, including full content.",
         "fields": "id (int), slug (str), title (str), content (str), visibility (str), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── LEADS ─────────────────────────────────────────────────────────────────
@@ -664,7 +664,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single product category by ID or slug.",
         "fields": "id (int), name (str), slug (str), sort (int), popularity (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_main_product_category_groups_list": {
         "path": "/api/v1/main-product-category-groups/",
@@ -684,7 +684,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single product category group by ID.",
         "fields": "id (int), name (str), slug (str), sort (int), main_product_categories (JSON str: [{id, name, slug}])",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_main_products_list": {
         "path": "/api/v1/main-products/",
@@ -704,7 +704,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single main product by ID or slug with full details.",
         "fields": "id (int), name (str), slug (str), main_product_category_id (int), allows_pick_up (bool)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── MOBILE WIDGET ─────────────────────────────────────────────────────────
@@ -766,7 +766,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single order group (booking) by ID with full details.",
         "fields": "id (int), status (str), start_date (date), end_date (date), total_value (float), order_count (int), user_address_id (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_order_groups_removal_checkout_list": {
         "path": "/api/v1/order-groups/{order_group_id}/removal-checkout/",
@@ -776,7 +776,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "refund_amount (float), cancellation_fee (float), net_refund (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_order_groups_swap_checkout_list": {
         "path": "/api/v1/order-groups/{order_group_id}/swap-checkout/",
@@ -786,7 +786,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "price_difference (float), new_total (float), old_total (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── ORDERS ────────────────────────────────────────────────────────────────
@@ -809,7 +809,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single seller-facing order by ID.",
         "fields": "id (int), status (str), start_date (date), end_date (date), product (str), customer_name (str), seller_location_id (int), price (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_orders_list": {
         "path": "/api/v1/orders/",
@@ -845,7 +845,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single order by ID with full details.",
         "fields": "id (int), status (str), created_on (datetime), start_date (date), end_date (date), customer_total (float), seller_total (float), order_group_id (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_orders_change_supplier_list": {
         "path": "/api/v1/orders/{order_id}/change-supplier/",
@@ -856,7 +856,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "seller_id (int), seller_name (str), price (float), distance_miles (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── PAYMENT METHODS ───────────────────────────────────────────────────────
@@ -877,7 +877,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single payment method by ID.",
         "fields": "id (int), type (str), last4 (str), brand (str), is_default (bool), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── PAYOUTS ───────────────────────────────────────────────────────────────
@@ -913,7 +913,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single payout record by ID.",
         "fields": "id (int), seller_id (int), amount (float), status (str), order_count (int), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── PUBLIC LOCATION PAGES ─────────────────────────────────────────────────
@@ -935,7 +935,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns the public location page for a specific city by state and city slug.",
         "fields": "state_slug (str), city_slug (str), state_name (str), city_name (str), seller_location_count (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── RBAC ──────────────────────────────────────────────────────────────────
@@ -1010,7 +1010,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single seller location by ID with full details including open hours.",
         "fields": "id (int), seller_id (int), name (str), city (str), state (str), zip_code (str), is_active (bool), service_radius_miles (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── SELLER PRODUCT SELLER LOCATIONS ───────────────────────────────────────
@@ -1046,7 +1046,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single seller-product-at-location listing by ID.",
         "fields": "id (int), seller_location_id (int), seller_product_id (int), main_product_name (str), is_active (bool), base_price (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── SELLER PRODUCTS ───────────────────────────────────────────────────────
@@ -1070,7 +1070,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single seller product by ID.",
         "fields": "id (int), seller_id (int), main_product_id (int), main_product_name (str), name (str), is_active (bool)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── SELLER INVOICE PAYABLES ───────────────────────────────────────────────
@@ -1091,7 +1091,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single seller invoice payable by ID.",
         "fields": "id (int), seller_id (int), amount (float), status (str), due_date (date), order_group_id (int)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── SELLERS ───────────────────────────────────────────────────────────────
@@ -1115,7 +1115,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single seller by ID with full details.",
         "fields": "id (int), name (str), slug (str), is_active (bool), location_count (int), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── SETUP INTENTS / STRIPE ────────────────────────────────────────────────
@@ -1161,35 +1161,35 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single task by ID.",
         "fields": "id (int), title (str), description (str), status (str), due_date (date), assigned_to_id (int), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_tasks_activities_list": {
         "path": "/api/v1/tasks/{id}/activities/",
         "description": "Returns the activity log (status changes, edits) for a specific task.",
         "fields": "id (int), action (str), changed_by (str), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_tasks_attachments_list": {
         "path": "/api/v1/tasks/{id}/attachments/",
         "description": "Returns file attachments for a specific task.",
         "fields": "id (int), file_url (str), filename (str), uploaded_by (str), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_tasks_comments_list": {
         "path": "/api/v1/tasks/{id}/comments/",
         "description": "Returns comments on a specific task.",
         "fields": "id (int), content (str), author_id (int), author_name (str), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_tasks_watchers_list": {
         "path": "/api/v1/tasks/{id}/watchers/",
         "description": "Returns users watching a specific task for notifications.",
         "fields": "id (int), user_id (int), user_name (str), email (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── TIME SLOTS ────────────────────────────────────────────────────────────
@@ -1211,7 +1211,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single time slot by ID.",
         "fields": "id (int), label (str), start_time (time), end_time (time)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── USER ADDRESS TYPES ────────────────────────────────────────────────────
@@ -1232,7 +1232,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single user address type by ID.",
         "fields": "id (int), name (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── USER ADDRESSES (JOB SITES) ────────────────────────────────────────────
@@ -1267,7 +1267,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single user address (job site) by ID.",
         "fields": "id (int), name (str), address (str), city (str), state (str), zip_code (str), user_group_id (int), is_active (bool)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "api_v1_user_addresses_recommendations_list": {
         "path": "/api/v1/user-addresses/{id}/recommendations/",
@@ -1279,7 +1279,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "id (int), main_product_id (int), main_product_name (str), reason (str), confidence_score (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── USER GROUP ADMIN APPROVALS ────────────────────────────────────────────
@@ -1300,7 +1300,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single user invite approval request by ID.",
         "fields": "id (int), user_group_id (int), invited_email (str), invited_by (str), status (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── USER GROUP CREDIT APPLICATIONS ────────────────────────────────────────
@@ -1322,7 +1322,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single credit application by ID.",
         "fields": "id (int), user_group_id (int), status (str), first_name (str), last_name (str), email (str), requested_credit_limit (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── USER GROUPS (ACCOUNTS) ────────────────────────────────────────────────
@@ -1353,7 +1353,7 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "id (int), name (str), industry (str), company_size (str), net_terms (bool), is_active (bool), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── USER IDENTITY ─────────────────────────────────────────────────────────
@@ -1402,7 +1402,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single user by ID.",
         "fields": "id (int), email (str), first_name (str), last_name (str), type (str), is_active (bool), user_group.id (int), user_group.name (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── WASTE TYPES ───────────────────────────────────────────────────────────
@@ -1424,7 +1424,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single waste type by ID or slug.",
         "fields": "id (int), name (str), slug (str), description (str), is_hazardous (bool)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── CHECKOUT ──────────────────────────────────────────────────────────────
@@ -1478,7 +1478,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single cart by ID with full CartGroup and CartItem details.",
         "fields": "id (int), user_address_id (int), item_count (int), total_price (float), cart_groups (JSON str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "checkout_v1_quote_accept_list": {
         "path": "/checkout/v1/quote/accept/",
@@ -1498,14 +1498,14 @@ MCP_TOOL_CATALOG = {
         ),
         "fields": "subtotal (float), delivery_fee (float), taxes (float), total (float), line_items (JSON str: [{product, quantity, price}])",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "checkout_v1_get": {
         "path": "/checkout/v1/{id}/",
         "description": "Returns a single cart by ID.",
         "fields": "id (int), user_address_id (int), item_count (int), total_price (float)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── EXPLORE / SEARCH ──────────────────────────────────────────────────────
@@ -1555,7 +1555,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single financial connection account by ID.",
         "fields": "id (int), institution_name (str), account_name (str), account_type (str), mask (str), status (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
     "financial_accounts_v1_financial_statement_list": {
         "path": "/financial-accounts/v1/financial-statement/",
@@ -1573,7 +1573,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single financial statement by ID.",
         "fields": "id (int), account_id (int), date (date), description (str), amount (float), transaction_type (str)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── MATCHING ENGINE ───────────────────────────────────────────────────────
@@ -1622,7 +1622,7 @@ MCP_TOOL_CATALOG = {
         "description": "Returns a single push notification by ID.",
         "fields": "id (int), title (str), body (str), type (str), read_at (datetime), created_on (datetime)",
         "method": "GET",
-        "requires_id": true,
+        "requires_id": True,
     },
 
     # ── PRICING ENGINE ────────────────────────────────────────────────────────

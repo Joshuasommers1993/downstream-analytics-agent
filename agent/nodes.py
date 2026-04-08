@@ -71,6 +71,9 @@ def _headers_for(path: str) -> dict:
     return _API_HEADERS
 
 
+MAX_FETCH_ROWS = 10_000  # cap to avoid multi-minute fetches on large tables
+
+
 def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
     """Fetch all pages from a cursor-paginated Downstream API endpoint."""
     rows: list[dict] = []
@@ -109,6 +112,9 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
             break
 
         rows.extend(page)
+
+        if len(rows) >= MAX_FETCH_ROWS:
+            break  # cap reached — return what we have so far
 
         if not data.get("has_more") or not page:
             break
@@ -390,7 +396,8 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         except Exception as e:
             return {**state, "error": f"MCP tool error: {e}"}
 
-    console.print(f"[green]  → Got {len(all_rows)} rows[/]")
+    cap_note = f" [yellow](capped at {MAX_FETCH_ROWS})[/]" if len(all_rows) >= MAX_FETCH_ROWS else ""
+    console.print(f"[green]  → Got {len(all_rows)} rows[/]{cap_note}")
 
     # Save to temp CSV — named by fetch order (not sentence index)
     fetch_idx = len(state["temp_files"])
