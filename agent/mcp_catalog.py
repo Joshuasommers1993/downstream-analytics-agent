@@ -44,6 +44,11 @@ MCP_TOOL_CATALOG = {
             "Use this for revenue attainment vs target, new vs returning customer revenue split, pipeline value, "
             "monthly GMV trend, or sales territory performance."
         ),
+        "fields": (
+            "net_new_gmv (float), expansion_gmv (float), backlog_gmv (float), total_gmv (float), "
+            "net_new_accounts (int), expansion_accounts (int), backlog_orders (int), "
+            "monthly_trend (JSON str: [{month (YYYY-MM), gmv}])"
+        ),
     },
     "api_insight_hub_account_growth_list": {
         "path": "/api/insight-hub/account-growth/",
@@ -55,6 +60,12 @@ MCP_TOOL_CATALOG = {
             "Filters: start_date, end_date. "
             "Use this for customer acquisition rate, churn rate, net customer growth, retention analysis, "
             "or to identify which specific accounts were won or lost in a period."
+        ),
+        "fields": (
+            "net_new (int), churned (int), retained (int), net_growth (int), "
+            "net_new_accounts (JSON str: [{id, name, first_order_date}]), "
+            "churned_accounts (JSON str: [{id, name, last_order_date}]), "
+            "monthly_trend (JSON str: [{month (YYYY-MM), net_new}])"
         ),
     },
     "api_insight_hub_commissions_list": {
@@ -68,6 +79,13 @@ MCP_TOOL_CATALOG = {
             "Use this for sales rep compensation analysis, commission payout totals, "
             "or to see how much GMV is in-cart vs scheduled vs already completed for commission purposes."
         ),
+        "fields": (
+            "commission_rate_percent (float), "
+            "summary.total_commission_eligible (float), summary.total_commission (float), "
+            "summary.total_in_cart (float), summary.total_scheduled (float), "
+            "reps (JSON str: [{rep_id, rep_name, commission_eligible, commission, in_cart, scheduled}]), "
+            "monthly_trend (JSON str: [{month, total_commission}])"
+        ),
     },
     "api_insight_hub_customer_spend_mom_list": {
         "path": "/api/insight-hub/customer-spend-mom/",
@@ -80,6 +98,7 @@ MCP_TOOL_CATALOG = {
             "spend concentration (which customers drive most revenue), "
             "or to identify accounts with declining or growing spend over time."
         ),
+        "fields": "user_group_id (int), user_group_name (str), month (str YYYY-MM), spend (float)",
     },
     "api_insight_hub_first_touch_to_order_list": {
         "path": "/api/insight-hub/first-touch-to-order/",
@@ -100,6 +119,7 @@ MCP_TOOL_CATALOG = {
             "Use this for geographic revenue distribution, top states by GMV, "
             "state-level market penetration, or regional sales comparison."
         ),
+        "fields": "state (str, two-letter code), gmv (float), order_count (int)",
     },
     "api_insight_hub_gmv_mom_list": {
         "path": "/api/insight-hub/gmv-mom/",
@@ -112,6 +132,7 @@ MCP_TOOL_CATALOG = {
             "Use this for revenue trends, platform margin trends, average order value trends, "
             "order volume trends, or MoM growth rate calculations."
         ),
+        "fields": "month (str YYYY-MM), gmv (float), supplier_cost (float), net_revenue (float), take_rate_percent (float), aov (float), order_count (int)",
     },
     "api_insight_hub_product_mix_list": {
         "path": "/api/insight-hub/product-mix/",
@@ -122,6 +143,7 @@ MCP_TOOL_CATALOG = {
             "Pre-computed: category name, order_count, percent of total orders, total_orders. "
             "Filters: start_date, end_date."
         ),
+        "fields": "name (str), order_count (int), percent (float), total_orders (int)",
     },
     "api_insight_hub_quota_vs_actual_list": {
         "path": "/api/insight-hub/quota-vs-actual/",
@@ -134,6 +156,7 @@ MCP_TOOL_CATALOG = {
             "Use this for sales rep performance review, quota attainment ranking, "
             "which reps are hitting or missing targets, or team-level attainment rollup."
         ),
+        "fields": "rep_id (int), rep_name (str), month (str YYYY-MM), gmv_target (float), gmv_actual (float), attainment_percent (float), new_accounts_target (int), new_accounts_actual (int), orders_target (int), orders_actual (int)",
     },
     "api_insight_hub_quotas_list": {
         "path": "/api/insight-hub/quotas/",
@@ -153,6 +176,10 @@ MCP_TOOL_CATALOG = {
             "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
             "Filters: start_date, end_date."
         ),
+        "fields": (
+            "stages (JSON str: [{stage, count, gmv}]), "
+            "conversion_rates.cart_to_quote (float), conversion_rates.quote_to_close (float), conversion_rates.overall (float)"
+        ),
     },
     "api_insight_hub_spend_by_product_list": {
         "path": "/api/insight-hub/spend-by-product/",
@@ -164,6 +191,7 @@ MCP_TOOL_CATALOG = {
             "Filters: start_date, end_date, user_group_id. "
             "Use this whenever the question asks about revenue, GMV, or AOV broken down by product or service type."
         ),
+        "fields": "main_product_name (str), gmv (float), order_count (int), aov (float)",
     },
     "api_insight_hub_spend_by_supplier_list": {
         "path": "/api/insight-hub/spend-by-supplier/",
@@ -174,6 +202,7 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier concentration analysis, top sellers by GMV, "
             "how much spend goes to each vendor, or supplier diversification metrics."
         ),
+        "fields": "seller_id (int), seller_name (str), gmv (float)",
     },
     "api_insight_hub_take_rate_mom_list": {
         "path": "/api/insight-hub/take-rate-mom/",
@@ -184,6 +213,7 @@ MCP_TOOL_CATALOG = {
             "seller_total (supplier cost), net_revenue, take_rate_percent. "
             "Filters: start_date, end_date, rep_id."
         ),
+        "fields": "rep_id (int), rep_name (str), month (str YYYY-MM), customer_total (float), seller_total (float), net_revenue (float), take_rate_percent (float)",
     },
 
     # ── ADMIN / INTERNAL ──────────────────────────────────────────────────────
@@ -396,6 +426,7 @@ MCP_TOOL_CATALOG = {
             "for industry-specific product recommendations, or to identify demand patterns per vertical. "
             "Do NOT use this for product revenue ranking — use api_insight_hub_spend_by_product_list for revenue."
         ),
+        "fields": "main_product_id (int), main_product_name (str), order_count (int), rank (int)",
     },
 
     # ── INSURANCE POLICIES ────────────────────────────────────────────────────
@@ -429,6 +460,7 @@ MCP_TOOL_CATALOG = {
             "Use this for invoice aging analysis, outstanding balance tracking, payment collection metrics, "
             "or to list unpaid invoices for an account."
         ),
+        "fields": "id (int), number (str), status (str: open/paid/void/past_due), total (float), amount_due (float), amount_paid (float), amount_remaining (float), due_date (date), created_on (datetime), user_group_id (int)",
     },
     "api_v1_invoices_metrics_list": {
         "path": "/api/v1/invoices/metrics/",
@@ -437,6 +469,7 @@ MCP_TOOL_CATALOG = {
             "past_due_total (overdue amount), outstanding_total (open unpaid), paid_total (collected). "
             "Use this for AR summary, total outstanding balance, or collections health at a glance."
         ),
+        "fields": "past_due_total (float), outstanding_total (float), paid_total (float)",
     },
     "api_v1_invoices_get": {
         "path": "/api/v1/invoices/{id}/",
@@ -622,6 +655,7 @@ MCP_TOOL_CATALOG = {
             "order_group_id, user_address_id, seller_location_id, product, price, customer_total, seller_total. "
             "Filters: status, order_group_id, user_address_id. Filter by created_on for date-range counts."
         ),
+        "fields": "id (int), status (str: SCHEDULED/COMPLETE/CANCELLED/PENDING/DENIED), created_on (datetime), start_date (date), end_date (date), customer_total (float), seller_total (float), order_group_id (int), user_address_id (int), seller_location_id (int)",
     },
     "api_v1_orders_internal_sales_data_list": {
         "path": "/api/v1/orders/internal/sales-data/",
@@ -699,6 +733,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list all cities Downstream serves, count coverage by state, "
             "or find which markets have seller presence."
         ),
+        "fields": "state_slug (str), city_slug (str), state_name (str), city_name (str), seller_location_count (int), is_indexed (bool)",
     },
     "api_v1_public_location_pages_get": {
         "path": "/api/v1/public/location-pages/{state_slug}/{city_slug}/",
@@ -757,6 +792,7 @@ MCP_TOOL_CATALOG = {
             "Filters: seller_id, city, state, is_active. "
             "Pass allow_all=true to see all locations platform-wide."
         ),
+        "fields": "id (int), seller_id (int), name (str), city (str), state (str), zip_code (str), is_active (bool), latitude (float), longitude (float), service_radius_miles (float), created_on (datetime)",
     },
     "api_v1_seller_locations_get": {
         "path": "/api/v1/seller-locations/{id}/",
@@ -777,6 +813,7 @@ MCP_TOOL_CATALOG = {
             "Use this to see which products a specific location offers, compare pricing across suppliers, "
             "or count active product listings per market."
         ),
+        "fields": "id (int), seller_location_id (int), seller_product_id (int), main_product_name (str), is_active (bool), base_price (float), rental_rate (float), allows_pickup (bool), created_on (datetime)",
     },
     "api_v1_seller_product_seller_locations_metrics_list": {
         "path": "/api/v1/seller-product-seller-locations/metrics/",
@@ -837,6 +874,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list all suppliers by name, count total active sellers, "
             "look up a seller by name, or get seller IDs for joining with other data."
         ),
+        "fields": "id (int), name (str), slug (str), is_active (bool), location_count (int), created_on (datetime)",
     },
     "api_v1_sellers_get": {
         "path": "/api/v1/sellers/{id}/",
@@ -1006,6 +1044,7 @@ MCP_TOOL_CATALOG = {
             "count accounts with net terms, find accounts by name, "
             "or rank accounts by spend for prioritization."
         ),
+        "fields": "id (int), name (str), industry (str), company_size (str), net_terms (bool), pay_later (bool), is_active (bool), created_on (datetime)",
     },
     "api_v1_user_groups_get": {
         "path": "/api/v1/user-groups/{user_group_id}/",
@@ -1232,6 +1271,7 @@ MCP_TOOL_CATALOG = {
             "Returns: base_price, delivery_fee, total_price, rental_period, fuel_surcharge. "
             "Use this to get the price a customer at a specific address would pay."
         ),
+        "fields": "base_price (float), delivery_fee (float), total_price (float), rental_period (str), fuel_surcharge (float)",
     },
     "pricing_engine_v1_supplier_insights_list": {
         "path": "/pricing-engine/v1/supplier-insights/",
