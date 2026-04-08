@@ -52,9 +52,16 @@ llm_mini = ChatOpenAI(
 
 
 # ─────────────────────────────────────────────
-# MCP tools (loaded once)
+# Single event loop + MCP tools (loaded once)
 # ─────────────────────────────────────────────
+_loop = asyncio.new_event_loop()
 _mcp_tools = None
+
+
+def _run(coro):
+    """Run a coroutine on the shared event loop."""
+    return _loop.run_until_complete(coro)
+
 
 def get_mcp_tools():
     global _mcp_tools
@@ -73,7 +80,7 @@ def get_mcp_tools():
             "headers": {"Authorization": f"Bearer {api_key}"},
         }
     })
-    _mcp_tools = asyncio.run(client.get_tools())
+    _mcp_tools = _run(client.get_tools())
     return _mcp_tools
 
 
@@ -290,7 +297,7 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     console.print(f"[green]  → Calling tool: [bold]{tool_name}[/][/]")
 
     try:
-        result = asyncio.run(tool_fn.ainvoke({}))
+        result = _run(tool_fn.ainvoke({}))
         if isinstance(result, str):
             try:
                 data = json.loads(result)
