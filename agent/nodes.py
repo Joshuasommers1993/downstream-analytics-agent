@@ -169,6 +169,8 @@ def _current_sentence(state: AgentState) -> str:
 def _format_tool_block(name: str, info: dict) -> str:
     """Format one tool entry for the reasoning prompt (description + CSV fields if available)."""
     lines = [f"  {name}", f"    -> {info['description']}"]
+    if info.get("requires_id"):
+        lines.append(f"    -> ⚠️  REQUIRES path parameter (single-resource only, cannot bulk-fetch)")
     if "fields" in info:
         lines.append(f"    -> CSV columns: {info['fields']}")
     return "\n".join(lines)
@@ -196,6 +198,7 @@ Rules:
 - Read each tool description carefully
 - Select only tools whose data directly answers the question
 - Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
+- NEVER select tools marked "REQUIRES path parameter" — they cannot be bulk-fetched
 - Output a JSON array of tool names only, nothing else
 - If multiple fetches are needed (e.g. orders + users), include all required tools
 
@@ -354,6 +357,13 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     tool_info = MCP_TOOL_CATALOG.get(tool_name)
     if not tool_info:
         return {**state, "error": f"Unknown tool: {tool_name}"}
+
+    # Reject tools that require a path parameter — they cannot be bulk-fetched
+    if "{" in tool_info["path"]:
+        return {**state, "error": (
+            f"Tool '{tool_name}' requires a path parameter ({tool_info['path']}) "
+            f"and cannot be bulk-fetched. Use a list endpoint instead."
+        )}
 
     is_readonly = tool_info.get("method", "GET").upper() == "GET"
 
