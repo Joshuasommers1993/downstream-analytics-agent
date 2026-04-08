@@ -36,6 +36,13 @@ llm = ChatOpenAI(
     temperature=0,
 )
 
+# Faster/cheaper model for simple tool selection (Stage 1)
+llm_mini = ChatOpenAI(
+    model="gpt-4o-mini",
+    api_key=os.getenv("OPENAI_API_KEY"),
+    temperature=0,
+)
+
 
 # ─────────────────────────────────────────────
 # MCP tools (loaded once)
@@ -89,7 +96,55 @@ def reasoning_node(state: AgentState) -> AgentState:
 
     # First call: decompose the question
     if not state["logic_sentences"]:
-        console.print("[blue]  → Decomposing question into logic sentences...[/]")
+
+        # ── Stage 1: select the right tools from RAG candidates ──────────────
+        console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
+
+        candidates = get_relevant_tools(state["question"], top_k=8)
+
+        selection_prompt = f"""
+You are a tool selector. Given an analytics question and a list of candidate MCP tools,
+choose only the tools actually needed to answer the question.
+
+Rules:
+- Read each tool description carefully
+- Select only tools whose data directly answers the question
+- Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
+- Output a JSON array of tool names only, nothing else
+- If multiple fetches are needed (e.g. orders + users), include all required tools
+
+CANDIDATE TOOLS:
+{candidates}
+
+Question: {state["question"]}
+
+Output JSON array of selected tool names only:
+""".strip()
+
+        sel_response = llm_mini.invoke(selection_prompt)
+        sel_raw = sel_response.content.strip()
+        if sel_raw.startswith("```"):
+            sel_raw = sel_raw.split("```")[1]
+            if sel_raw.startswith("json"):
+                sel_raw = sel_raw[4:]
+        sel_raw = sel_raw.strip()
+
+        try:
+            selected_tools = json.loads(sel_raw)
+        except Exception:
+            selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
+
+        console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
+
+        # Build a focused tool block from selected names only
+        from agent.mcp_catalog import MCP_TOOL_CATALOG
+        focused_tools = "\n".join(
+            f"  {t}\n    -> {MCP_TOOL_CATALOG[t]['description']}"
+            for t in selected_tools if t in MCP_TOOL_CATALOG
+        ) or candidates  # fallback to full candidates if selection fails
+
+        # ── Stage 2: build the FETCH/COMPUTE plan ────────────────────────────
+        console.print("[blue]  → Stage 2: building execution plan...[/]")
 
         prompt = f"""
 You are a reasoning agent. Decompose this analytics question into an ordered list of logic sentences.
@@ -103,8 +158,8 @@ Rules:
 - Keep each sentence short and specific (one action)
 - Output ONLY a JSON array of strings, nothing else
 
-AVAILABLE MCP TOOLS most relevant to this question (use exact tool name in every FETCH sentence):
-{get_relevant_tools(state["question"], top_k=8)}
+AVAILABLE MCP TOOLS (use exact tool name in every FETCH sentence):
+{focused_tools}
 
 Question: {state["question"]}
 
@@ -114,7 +169,6 @@ Output JSON array only:
         response = llm.invoke(prompt)
         raw = response.content.strip()
 
-        # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):

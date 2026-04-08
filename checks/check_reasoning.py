@@ -1,6 +1,9 @@
 """
-Step 3: Run the Reasoning Agent in isolation.
-Prints the full prompt sent to GPT-4o and the logic sentences returned.
+Step 3: Run the Reasoning Agent in isolation (two-stage).
+
+Stage 1: GPT-4o selects relevant tools from RAG top-8 candidates.
+Stage 2: GPT-4o builds FETCH/COMPUTE plan using only selected tools.
+
 Run: venv/bin/python3 checks/check_reasoning.py "your question here"
 """
 import sys, os
@@ -8,10 +11,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import json
 from dotenv import load_dotenv
 from agent.tool_selector import get_relevant_tools
+from agent.mcp_catalog import MCP_TOOL_CATALOG
 
 load_dotenv()
 
-import os
 from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(model="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
@@ -22,10 +25,57 @@ print(f"\n{'='*60}")
 print(f"QUESTION: {question}")
 print(f"{'='*60}")
 
-# Build the exact same prompt as reasoning_node
-tool_context = get_relevant_tools(question, top_k=8)
+# ── Stage 1: get RAG candidates, then select with GPT-4o ──────────────────────
+candidates = get_relevant_tools(question, top_k=8)
 
-prompt = f"""
+print("\n─── STAGE 1: RAG CANDIDATES (top-8) ────────────────────")
+print(candidates)
+
+selection_prompt = f"""
+You are a tool selector. Given an analytics question and a list of candidate MCP tools,
+choose only the tools actually needed to answer the question.
+
+Rules:
+- Read each tool description carefully
+- Select only tools whose data directly answers the question
+- Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
+- Output a JSON array of tool names only, nothing else
+- If multiple fetches are needed (e.g. orders + users), include all required tools
+
+CANDIDATE TOOLS:
+{candidates}
+
+Question: {question}
+
+Output JSON array of selected tool names only:
+""".strip()
+
+sel_response = llm.invoke(selection_prompt)
+sel_raw = sel_response.content.strip()
+if sel_raw.startswith("```"):
+    sel_raw = sel_raw.split("```")[1]
+    if sel_raw.startswith("json"):
+        sel_raw = sel_raw[4:]
+sel_raw = sel_raw.strip()
+
+try:
+    selected_tools = json.loads(sel_raw)
+except Exception:
+    selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
+
+print(f"\n─── STAGE 1 RESULT: SELECTED TOOLS ─────────────────────")
+for t in selected_tools:
+    status = "✅" if t in MCP_TOOL_CATALOG else "❌ NOT IN CATALOG"
+    print(f"  {status}  {t}")
+
+# Build focused tool block
+focused_tools = "\n".join(
+    f"  {t}\n    -> {MCP_TOOL_CATALOG[t]['description']}"
+    for t in selected_tools if t in MCP_TOOL_CATALOG
+) or candidates  # fallback to full candidates if selection fails
+
+# ── Stage 2: build FETCH/COMPUTE plan ────────────────────────────────────────
+plan_prompt = f"""
 You are a reasoning agent. Decompose this analytics question into an ordered list of logic sentences.
 
 Rules:
@@ -37,24 +87,23 @@ Rules:
 - Keep each sentence short and specific (one action)
 - Output ONLY a JSON array of strings, nothing else
 
-AVAILABLE MCP TOOLS most relevant to this question (use exact tool name in every FETCH sentence):
-{tool_context}
+AVAILABLE MCP TOOLS (use exact tool name in every FETCH sentence):
+{focused_tools}
 
 Question: {question}
 
 Output JSON array only:
 """.strip()
 
-print("\n─── PROMPT SENT TO GPT-4o ───────────────────────────────")
-print(prompt)
+print("\n─── STAGE 2 PROMPT ──────────────────────────────────────")
+print(plan_prompt)
 
-response = llm.invoke(prompt)
+response = llm.invoke(plan_prompt)
 raw = response.content.strip()
 
-print("\n─── RAW RESPONSE ────────────────────────────────────────")
+print("\n─── STAGE 2 RAW RESPONSE ────────────────────────────────")
 print(raw)
 
-# Parse
 if raw.startswith("```"):
     raw = raw.split("```")[1]
     if raw.startswith("json"):
@@ -66,19 +115,17 @@ try:
 except Exception:
     sentences = [l.strip() for l in raw.splitlines() if l.strip().startswith(("FETCH:", "COMPUTE:"))]
 
-print("\n─── LOGIC PLAN ──────────────────────────────────────────")
+print("\n─── FINAL LOGIC PLAN ────────────────────────────────────")
 for i, s in enumerate(sentences):
     print(f"  {i+1}. {s}")
 
-# Step 4 preview: validate tool names
+# Validate tool names
 print("\n─── TOOL NAME VALIDATION ────────────────────────────────")
-from agent.mcp_catalog import MCP_TOOL_CATALOG
 valid_tools = set(MCP_TOOL_CATALOG.keys())
 
 for s in sentences:
     if not s.upper().startswith("FETCH:"):
         continue
-    # Try to find a tool name in the sentence
     found = [t for t in valid_tools if t in s]
     if found:
         print(f"  ✅  {s}")
