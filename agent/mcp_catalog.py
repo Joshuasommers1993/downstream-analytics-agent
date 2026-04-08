@@ -13,6 +13,7 @@ MCP_TOOL_CATALOG = {
             "Fields: reveals_used, reveals_cap, user_group_id. "
             "Use this to check how many phone numbers have been revealed for a given account and whether the quota is exhausted."
         ),
+        "fields": "reveals_used (int), reveals_cap (int), user_group_id (int)",
     },
     "api_enrichment_phone_reveal_quota_list": {
         "path": "/api/enrichment/phone-reveal/quota/",
@@ -21,6 +22,8 @@ MCP_TOOL_CATALOG = {
             "Fields: quota_used, quota_total, quota_remaining, reset_date. "
             "Use this to check org-wide phone reveal limits and remaining capacity."
         ),
+    
+        "fields": "quota_used (int), quota_total (int), quota_remaining (int), reset_date (date)",
     },
     "api_enrichment_user_groups_suggested_coworkers_list": {
         "path": "/api/enrichment/user-groups/{user_group_id}/suggested-coworkers/",
@@ -29,6 +32,7 @@ MCP_TOOL_CATALOG = {
             "Fields: first_name, last_name, email, title, linkedin_url. "
             "Use this to find potential new users to invite to an account based on company email domain."
         ),
+        "fields": "first_name (str), last_name (str), email (str), title (str), linkedin_url (str)",
     },
 
     # ── INSIGHT HUB (pre-computed sales analytics) ────────────────────────────
@@ -109,6 +113,8 @@ MCP_TOOL_CATALOG = {
             "Use this for outreach-to-order speed, sales cycle length, or email response latency. "
             "Not suitable for funnel stage drop-off or cart-to-order rate — use api_insight_hub_sales_funnel_list for those."
         ),
+    
+        "fields": "average_days (float), total_conversions (int)",
     },
     "api_insight_hub_gmv_by_state_list": {
         "path": "/api/insight-hub/gmv-by-state/",
@@ -166,6 +172,8 @@ MCP_TOOL_CATALOG = {
             "Use this to retrieve the quota plan for a rep, check what targets are set for a given month, "
             "or verify quota coverage across the team."
         ),
+    
+        "fields": "id (int), rep_id (int), month (str YYYY-MM), gmv_target (float), new_accounts_target (int), orders_target (int)",
     },
     "api_insight_hub_sales_funnel_list": {
         "path": "/api/insight-hub/sales-funnel/",
@@ -226,6 +234,8 @@ MCP_TOOL_CATALOG = {
             "Filter: user_id. "
             "Use this to audit outreach history for a specific rep or customer."
         ),
+    
+        "fields": "id (int), type (str: email/call/note), subject (str), body (str), created_by (str), created_on (datetime)",
     },
     "api_v1_admin_internal_hierarchy_org_chart_list": {
         "path": "/api/v1/admin/internal-hierarchy/org-chart/",
@@ -234,6 +244,8 @@ MCP_TOOL_CATALOG = {
             "Use this to look up team structure, find which rep belongs to which team, "
             "or identify reporting relationships."
         ),
+    
+        "fields": "team_id (int), team_name (str), manager_id (int), manager_name (str), reps (JSON str: [{rep_id, rep_name}])",
     },
     "api_v1_admin_sales_target_vs_actuals_list": {
         "path": "/api/v1/admin/sales/target-vs-actuals/",
@@ -243,6 +255,8 @@ MCP_TOOL_CATALOG = {
             "Use this for daily sales pacing dashboards, are-we-on-track analysis, "
             "or current month vs prior month performance."
         ),
+    
+        "fields": "date (date), actual_gmv (float), target_gmv (float), prior_month_gmv (float), cumulative_actual (float), cumulative_target (float)",
     },
     "api_v1_admin_transactional_emails_list": {
         "path": "/api/v1/admin/transactional-emails/",
@@ -251,6 +265,8 @@ MCP_TOOL_CATALOG = {
             "Filter: user_id. "
             "Use this to check which system emails were sent to a user (order confirmations, invoices, etc.)."
         ),
+    
+        "fields": "id (int), subject (str), template (str), sent_at (datetime), status (str)",
     },
     "api_v1_admin_user_addresses_goal_progress_list": {
         "path": "/api/v1/admin/user-addresses/{user_address_id}/goal-progress/",
@@ -259,6 +275,7 @@ MCP_TOOL_CATALOG = {
             "cart value, order group count, order count, invoice totals. "
             "Use this to track progress of a specific job site toward its spend goal."
         ),
+        "fields": "cart_value (float), order_group_count (int), order_count (int), invoice_total (float)",
     },
     "api_v1_admin_user_groups_goal_progress_aggregate_list": {
         "path": "/api/v1/admin/user-groups/goal-progress/aggregate/",
@@ -267,6 +284,8 @@ MCP_TOOL_CATALOG = {
             "total target GMV, total actual GMV, attainment percentage, account count. "
             "Use this for platform-wide goal attainment rollup or pipeline health overview."
         ),
+    
+        "fields": "total_target_gmv (float), total_actual_gmv (float), attainment_percent (float), account_count (int)",
     },
     "api_v1_admin_user_groups_spend_potential_list": {
         "path": "/api/v1/admin/user-groups/spend-potential/",
@@ -276,6 +295,8 @@ MCP_TOOL_CATALOG = {
             "Fields: user_group_id, user_group_name, estimated_monthly_spend, confidence. "
             "Use this for account prioritization, TAM estimation per account, or whitespace analysis."
         ),
+    
+        "fields": "user_group_id (int), user_group_name (str), estimated_monthly_spend (float), confidence (str)",
     },
     "api_v1_admin_user_groups_enrichment_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/enrichment/",
@@ -284,6 +305,7 @@ MCP_TOOL_CATALOG = {
             "Includes company size, employee count, industry, revenue range, LinkedIn URL, and raw provider payloads. "
             "Use this to look up firmographic data for an account."
         ),
+        "fields": "company_size (str), employee_count (int), industry (str), revenue_range (str), linkedin_url (str)",
     },
     "api_v1_admin_user_groups_goal_progress_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/goal-progress/",
@@ -292,6 +314,7 @@ MCP_TOOL_CATALOG = {
             "target GMV, actual GMV, attainment percent, order count, invoice totals. "
             "Use this to check how a specific account is tracking against its spend goal."
         ),
+        "fields": "user_group_id (int), user_group_name (str), target_gmv (float), actual_gmv (float), attainment_percent (float), order_count (int)",
     },
     "api_v1_admin_user_groups_notes_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/notes/",
@@ -300,6 +323,7 @@ MCP_TOOL_CATALOG = {
             "Fields: id, content, created_by, created_on. "
             "Use this to retrieve account notes or activity log for a customer."
         ),
+        "fields": "id (int), content (str), created_by (str), created_on (datetime)",
     },
     "api_v1_admin_user_groups_sales_state_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/sales-state/",
@@ -308,6 +332,7 @@ MCP_TOOL_CATALOG = {
             "sales_state (prospect/active/churned/etc.), days_since_last_order, lifecycle_stage. "
             "Use this to check the CRM status of a customer or identify accounts at risk."
         ),
+        "fields": "sales_state (str), days_since_last_order (int), lifecycle_stage (str)",
     },
 
     # ── ADVERTISEMENTS ────────────────────────────────────────────────────────
@@ -320,6 +345,8 @@ MCP_TOOL_CATALOG = {
             "Filters: seller_id, placement, is_active. "
             "Use this to list active promotions, see which sellers are advertising, or audit ad inventory."
         ),
+    
+        "fields": "id (int), title (str), image_url (str), target_url (str), placement (str), is_active (bool), start_date (date), end_date (date)",
     },
     "api_v1_advertisements_get": {
         "path": "/api/v1/advertisements/{id}/",
@@ -328,6 +355,7 @@ MCP_TOOL_CATALOG = {
             "Fields: id, title, image_url, target_url, seller, placement, is_active, start_date, end_date. "
             "Use this to retrieve details of a specific ad placement."
         ),
+        "fields": "id (int), title (str), image_url (str), target_url (str), placement (str), is_active (bool), start_date (date), end_date (date)",
     },
 
     # ── BRANDS ────────────────────────────────────────────────────────────────
@@ -339,6 +367,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, name, slug, logo_url. "
             "Use this to list brands, search for a specific brand, or get brand IDs for filtering products."
         ),
+    
+        "fields": "id (int), name (str), slug (str), logo_url (str)",
     },
     "api_v1_brands_get": {
         "path": "/api/v1/brands/{id}/",
@@ -346,6 +376,7 @@ MCP_TOOL_CATALOG = {
             "Returns a single brand by ID. "
             "Fields: id, name, slug, logo_url. "
         ),
+        "fields": "id (int), name (str), slug (str), logo_url (str)",
     },
 
     # ── DAY OF WEEKS ──────────────────────────────────────────────────────────
@@ -357,10 +388,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, name (e.g. MONDAY, TUESDAY). "
             "Use this to get the UUID for a day name when setting or querying open hours."
         ),
+    
+        "fields": "id (int), name (str: MONDAY/TUESDAY/WEDNESDAY/THURSDAY/FRIDAY/SATURDAY/SUNDAY)",
     },
     "api_v1_day_of_weeks_get": {
         "path": "/api/v1/day-of-weeks/{id}/",
         "description": "Returns a single day-of-week record by ID.",
+        "fields": "id (int), name (str)",
     },
 
     # ── FINANCIAL CONNECTION ──────────────────────────────────────────────────
@@ -372,6 +406,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, institution_name, status, linked_accounts_count, created_on. "
             "Use this to check if an account has connected their bank account."
         ),
+    
+        "fields": "id (int), institution_name (str), status (str), linked_accounts_count (int), created_on (datetime)",
     },
 
     # ── GROUP INVOICES ────────────────────────────────────────────────────────
@@ -384,10 +420,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, user_group, total, status, invoice_count, due_date, created_on. "
             "Use this for account-level billing summaries or consolidated payment tracking."
         ),
+    
+        "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
     },
     "api_v1_group_invoices_get": {
         "path": "/api/v1/group_invoices/{id}/",
         "description": "Returns a single grouped invoice by ID with its constituent invoices.",
+        "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
     },
 
     # ── IDENTITY VERIFICATION ─────────────────────────────────────────────────
@@ -399,6 +438,8 @@ MCP_TOOL_CATALOG = {
             "Fields: status, verified_at, provider. "
             "Use this to check if an account has completed KYC/identity verification."
         ),
+    
+        "fields": "status (str), verified_at (datetime), provider (str)",
     },
 
     # ── INDUSTRIES ────────────────────────────────────────────────────────────
@@ -411,10 +452,13 @@ MCP_TOOL_CATALOG = {
             "Examples: construction, landscaping, demolition, roofing, plumbing. "
             "Use this to get industry IDs for filtering accounts, or to list all supported industries."
         ),
+    
+        "fields": "id (int), name (str), slug (str), sort_order (int)",
     },
     "api_v1_industries_get": {
         "path": "/api/v1/industries/{id}/",
         "description": "Returns a single industry by ID or slug.",
+        "fields": "id (int), name (str), slug (str), sort_order (int)",
     },
     "api_v1_industries_popular_products_list": {
         "path": "/api/v1/industries/{id}/popular-products/",
@@ -440,10 +484,13 @@ MCP_TOOL_CATALOG = {
             "Filters: account, account_type, type, status. "
             "Use this to check insurance compliance, find expired policies, or count accounts with valid coverage."
         ),
+    
+        "fields": "id (int), account_type (str: seller/buyer), type (str), status (str: valid/expired/pending), effective_date (date), expiration_date (date), insurer (str), coverage_amount (float)",
     },
     "api_v1_insurance_policies_get": {
         "path": "/api/v1/insurance-policies/{insurance_policy_id}/",
         "description": "Returns a single insurance policy by ID.",
+        "fields": "id (int), account_type (str), type (str), status (str), effective_date (date), expiration_date (date), insurer (str), coverage_amount (float)",
     },
 
     # ── INVOICES ──────────────────────────────────────────────────────────────
@@ -474,6 +521,7 @@ MCP_TOOL_CATALOG = {
     "api_v1_invoices_get": {
         "path": "/api/v1/invoices/{id}/",
         "description": "Returns a single invoice by ID with full details.",
+        "fields": "id (int), number (str), status (str), total (float), amount_due (float), amount_remaining (float), due_date (date), created_on (datetime)",
     },
 
     # ── KNOWLEDGE ─────────────────────────────────────────────────────────────
@@ -485,6 +533,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, slug, title, visibility (public/internal), created_on. "
             "Use this to browse available documentation."
         ),
+    
+        "fields": "id (int), slug (str), title (str), visibility (str: public/internal), created_on (datetime)",
     },
     "api_v1_knowledge_search_list": {
         "path": "/api/v1/knowledge/search/",
@@ -496,10 +546,13 @@ MCP_TOOL_CATALOG = {
             "Use this to find documentation, policies, or internal knowledge relevant to a topic. "
             "Note: this is a docs search, NOT a data query — it searches help content, not transactional data."
         ),
+    
+        "fields": "document_id (int), slug (str), heading (str), score (float), excerpt (str)",
     },
     "api_v1_knowledge_get": {
         "path": "/api/v1/knowledge/{knowledge_document_id}/",
         "description": "Returns a single knowledge document by ID, including full content.",
+        "fields": "id (int), slug (str), title (str), content (str), visibility (str), created_on (datetime)",
     },
 
     # ── LEADS ─────────────────────────────────────────────────────────────────
@@ -511,6 +564,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, email, name, company, phone, source, created_on, status. "
             "Use this to list new leads, track lead volume by source, or audit CRM intake."
         ),
+    
+        "fields": "id (int), email (str), name (str), company (str), phone (str), source (str), status (str), created_on (datetime)",
     },
     "api_v1_leads_meta_webhook_list": {
         "path": "/api/v1/leads/meta/webhook/",
@@ -518,6 +573,8 @@ MCP_TOOL_CATALOG = {
             "Webhook verification endpoint for Meta (Facebook/Instagram) lead forms. "
             "Not useful for analytics — used for integration setup only."
         ),
+    
+        "fields": "hub.mode (str), hub.challenge (str), hub.verify_token (str)",
     },
 
     # ── MAIN PRODUCTS ─────────────────────────────────────────────────────────
@@ -531,10 +588,13 @@ MCP_TOOL_CATALOG = {
             "Use this to get category IDs for filtering products, list available service categories, "
             "or understand the product taxonomy."
         ),
+    
+        "fields": "id (int), name (str), slug (str), sort (int), popularity (int)",
     },
     "api_v1_main_product_categories_get": {
         "path": "/api/v1/main-product-categories/{id}/",
         "description": "Returns a single product category by ID or slug.",
+        "fields": "id (int), name (str), slug (str), sort (int), popularity (int)",
     },
     "api_v1_main_product_category_groups_list": {
         "path": "/api/v1/main-product-category-groups/",
@@ -545,10 +605,13 @@ MCP_TOOL_CATALOG = {
             "Filters: seller_location (limits to products available at that location), allows_pickup. "
             "Use this for top-level product taxonomy, marketplace navigation, or filtering available services."
         ),
+    
+        "fields": "id (int), name (str), slug (str), sort (int), main_product_categories (JSON str: [{id, name, slug}])",
     },
     "api_v1_main_product_category_groups_get": {
         "path": "/api/v1/main-product-category-groups/{id}/",
         "description": "Returns a single product category group by ID.",
+        "fields": "id (int), name (str), slug (str), sort (int), main_product_categories (JSON str: [{id, name, slug}])",
     },
     "api_v1_main_products_list": {
         "path": "/api/v1/main-products/",
@@ -559,10 +622,13 @@ MCP_TOOL_CATALOG = {
             "Use this to look up product IDs, get the full product catalog, "
             "find which products are available, or map product names to IDs."
         ),
+    
+        "fields": "id (int), name (str), slug (str), main_product_category_id (int), allows_pick_up (bool)",
     },
     "api_v1_main_products_get": {
         "path": "/api/v1/main-products/{id}/",
         "description": "Returns a single main product by ID or slug with full details.",
+        "fields": "id (int), name (str), slug (str), main_product_category_id (int), allows_pick_up (bool)",
     },
 
     # ── MOBILE WIDGET ─────────────────────────────────────────────────────────
@@ -574,6 +640,8 @@ MCP_TOOL_CATALOG = {
             "active orders count, upcoming deliveries, recent activity. "
             "Not suitable for analytics — use order endpoints for raw data."
         ),
+    
+        "fields": "active_orders_count (int), upcoming_deliveries_count (int)",
     },
 
     # ── ORDER GROUPS (BOOKINGS) ───────────────────────────────────────────────
@@ -585,6 +653,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, order_group_id, file_url, filename, uploaded_by, created_on. "
             "Use this to list documents or files attached to a booking."
         ),
+    
+        "fields": "id (int), order_group_id (int), file_url (str), filename (str), uploaded_by (str), created_on (datetime)",
     },
     "api_v1_order_groups_list": {
         "path": "/api/v1/order-groups/",
@@ -598,6 +668,8 @@ MCP_TOOL_CATALOG = {
             "Use this to count bookings by date, track booking volume trends, "
             "find bookings by job site, or calculate total booking value."
         ),
+    
+        "fields": "id (int), status (str), start_date (date), end_date (date), created_on (datetime), total_value (float), order_count (int), user_address_id (int), seller_id (int)",
     },
     "api_v1_order_groups_filter_options_list": {
         "path": "/api/v1/order-groups/filter-options/",
@@ -606,10 +678,13 @@ MCP_TOOL_CATALOG = {
             "Returns distinct values for status, seller, product type, date ranges. "
             "Use this to populate filter dropdowns for booking lists."
         ),
+    
+        "fields": "statuses (JSON str: [str]), sellers (JSON str: [{id, name}]), products (JSON str: [{id, name}])",
     },
     "api_v1_order_groups_get": {
         "path": "/api/v1/order-groups/{id}/",
         "description": "Returns a single order group (booking) by ID with full details.",
+        "fields": "id (int), status (str), start_date (date), end_date (date), total_value (float), order_count (int), user_address_id (int)",
     },
     "api_v1_order_groups_removal_checkout_list": {
         "path": "/api/v1/order-groups/{order_group_id}/removal-checkout/",
@@ -617,6 +692,7 @@ MCP_TOOL_CATALOG = {
             "Returns checkout preview for removing/cancelling a service from an order group. "
             "Use this to see pricing implications of removing a product from a booking."
         ),
+        "fields": "refund_amount (float), cancellation_fee (float), net_refund (float)",
     },
     "api_v1_order_groups_swap_checkout_list": {
         "path": "/api/v1/order-groups/{order_group_id}/swap-checkout/",
@@ -624,6 +700,7 @@ MCP_TOOL_CATALOG = {
             "Returns checkout preview for swapping a service provider in an order group. "
             "Use this to see pricing implications of changing the supplier for a booking."
         ),
+        "fields": "price_difference (float), new_total (float), old_total (float)",
     },
 
     # ── ORDERS ────────────────────────────────────────────────────────────────
@@ -637,10 +714,13 @@ MCP_TOOL_CATALOG = {
             "seller_location, price, created_on, submitted_on. "
             "Use this only from the supplier side to see their own delivery schedule or incoming order queue."
         ),
+    
+        "fields": "id (int), status (str), start_date (date), end_date (date), product (str), customer_name (str), seller_location_id (int), price (float), created_on (datetime)",
     },
     "api_v1_orders_for_seller_get": {
         "path": "/api/v1/orders-for-seller/{id}/",
         "description": "Returns a single seller-facing order by ID.",
+        "fields": "id (int), status (str), start_date (date), end_date (date), product (str), customer_name (str), seller_location_id (int), price (float)",
     },
     "api_v1_orders_list": {
         "path": "/api/v1/orders/",
@@ -666,10 +746,13 @@ MCP_TOOL_CATALOG = {
             "Access restricted to sales users and managers. "
             "Use this for current-month sales performance snapshots."
         ),
+    
+        "fields": "total_gmv (float), order_count (int), new_accounts (int), gmv_by_rep (JSON str: [{rep_id, rep_name, gmv}]), daily_pacing (JSON str: [{date, gmv}])",
     },
     "api_v1_orders_get": {
         "path": "/api/v1/orders/{id}/",
         "description": "Returns a single order by ID with full details.",
+        "fields": "id (int), status (str), created_on (datetime), start_date (date), end_date (date), customer_total (float), seller_total (float), order_group_id (int)",
     },
     "api_v1_orders_change_supplier_list": {
         "path": "/api/v1/orders/{order_id}/change-supplier/",
@@ -678,6 +761,7 @@ MCP_TOOL_CATALOG = {
             "Fields: seller_id, seller_name, price, availability, distance_miles. "
             "Use this to see which suppliers could fulfil a given order if the current one needs to be swapped."
         ),
+        "fields": "seller_id (int), seller_name (str), price (float), distance_miles (float)",
     },
 
     # ── PAYMENT METHODS ───────────────────────────────────────────────────────
@@ -689,10 +773,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, type (card/bank_account/net_terms), last4, brand, is_default, created_on. "
             "Use this to check what payment methods an account has, or count accounts with specific payment types."
         ),
+    
+        "fields": "id (int), type (str: card/bank_account/net_terms), last4 (str), brand (str), is_default (bool), created_on (datetime)",
     },
     "api_v1_payment_methods_get": {
         "path": "/api/v1/payment-methods/{id}/",
         "description": "Returns a single payment method by ID.",
+        "fields": "id (int), type (str), last4 (str), brand (str), is_default (bool), created_on (datetime)",
     },
 
     # ── PAYOUTS ───────────────────────────────────────────────────────────────
@@ -708,6 +795,8 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier payment history, payout volume analysis, "
             "outstanding payments to sellers, or reconciliation."
         ),
+    
+        "fields": "id (int), seller_id (int), amount (float), status (str: pending/paid/failed), order_count (int), created_on (datetime), paid_on (datetime)",
     },
     "api_v1_payouts_metrics_list": {
         "path": "/api/v1/payouts/metrics/",
@@ -716,10 +805,13 @@ MCP_TOOL_CATALOG = {
             "total_paid, total_pending, total_failed, payout_count. "
             "Use this for supplier payment summary or reconciliation totals."
         ),
+    
+        "fields": "total_paid (float), total_pending (float), total_failed (float), payout_count (int)",
     },
     "api_v1_payouts_get": {
         "path": "/api/v1/payouts/{id}/",
         "description": "Returns a single payout record by ID.",
+        "fields": "id (int), seller_id (int), amount (float), status (str), order_count (int), created_on (datetime)",
     },
 
     # ── PUBLIC LOCATION PAGES ─────────────────────────────────────────────────
@@ -738,6 +830,7 @@ MCP_TOOL_CATALOG = {
     "api_v1_public_location_pages_get": {
         "path": "/api/v1/public/location-pages/{state_slug}/{city_slug}/",
         "description": "Returns the public location page for a specific city by state and city slug.",
+        "fields": "state_slug (str), city_slug (str), state_name (str), city_name (str), seller_location_count (int)",
     },
 
     # ── RBAC ──────────────────────────────────────────────────────────────────
@@ -748,6 +841,8 @@ MCP_TOOL_CATALOG = {
             "Returns hard-coded role templates (Admin, Member, View-Only, etc.) that can be used when creating account roles. "
             "Use this to list available permission templates for user management."
         ),
+    
+        "fields": "id (int), name (str), scopes (JSON str: [str])",
     },
     "api_v1_rbac_roles_list": {
         "path": "/api/v1/rbac/roles/",
@@ -756,6 +851,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, name, scopes, user_count, created_on. "
             "Use this to list permission roles in an account."
         ),
+    
+        "fields": "id (int), name (str), user_count (int), scopes (JSON str: [str]), created_on (datetime)",
     },
     "api_v1_rbac_scopes_list": {
         "path": "/api/v1/rbac/scopes/",
@@ -763,6 +860,8 @@ MCP_TOOL_CATALOG = {
             "Returns all available permission scopes that can be assigned to roles. "
             "Use this to list what granular permissions exist in the system."
         ),
+    
+        "fields": "id (int), name (str), description (str)",
     },
 
     # ── SELLER DASHBOARD ──────────────────────────────────────────────────────
@@ -775,6 +874,8 @@ MCP_TOOL_CATALOG = {
             "Scoped to the authenticated seller. "
             "Use this for supplier-side performance summaries."
         ),
+    
+        "fields": "total_orders (int), revenue (float), upcoming_deliveries (int), outstanding_payouts (float), customer_count (int)",
     },
 
     # ── SELLER LOCATIONS ──────────────────────────────────────────────────────
@@ -797,6 +898,7 @@ MCP_TOOL_CATALOG = {
     "api_v1_seller_locations_get": {
         "path": "/api/v1/seller-locations/{id}/",
         "description": "Returns a single seller location by ID with full details including open hours.",
+        "fields": "id (int), seller_id (int), name (str), city (str), state (str), zip_code (str), is_active (bool), service_radius_miles (float)",
     },
 
     # ── SELLER PRODUCT SELLER LOCATIONS ───────────────────────────────────────
@@ -822,10 +924,13 @@ MCP_TOOL_CATALOG = {
             "order_count, total_gmv, average_rating, conversion_rate. "
             "Use this to analyze which product-location combinations generate the most orders or revenue."
         ),
+    
+        "fields": "order_count (int), total_gmv (float), average_rating (float), conversion_rate (float)",
     },
     "api_v1_seller_product_seller_locations_get": {
         "path": "/api/v1/seller-product-seller-locations/{id}/",
         "description": "Returns a single seller-product-at-location listing by ID.",
+        "fields": "id (int), seller_location_id (int), seller_product_id (int), main_product_name (str), is_active (bool), base_price (float)",
     },
 
     # ── SELLER PRODUCTS ───────────────────────────────────────────────────────
@@ -840,10 +945,13 @@ MCP_TOOL_CATALOG = {
             "Use this to list what products a seller offers, find sellers that offer a specific product, "
             "or analyze product coverage per supplier."
         ),
+    
+        "fields": "id (int), seller_id (int), main_product_id (int), main_product_name (str), name (str), is_active (bool), created_on (datetime)",
     },
     "api_v1_seller_products_get": {
         "path": "/api/v1/seller-products/{id}/",
         "description": "Returns a single seller product by ID.",
+        "fields": "id (int), seller_id (int), main_product_id (int), main_product_name (str), name (str), is_active (bool)",
     },
 
     # ── SELLER INVOICE PAYABLES ───────────────────────────────────────────────
@@ -855,10 +963,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, seller, amount, status (pending/paid), due_date, order_group, created_on. "
             "Use this for supplier accounts-payable tracking or outstanding seller liabilities."
         ),
+    
+        "fields": "id (int), seller_id (int), amount (float), status (str: pending/paid), due_date (date), order_group_id (int), created_on (datetime)",
     },
     "api_v1_sellerinvoicepayable_get": {
         "path": "/api/v1/sellerinvoicepayable/{id}/",
         "description": "Returns a single seller invoice payable by ID.",
+        "fields": "id (int), seller_id (int), amount (float), status (str), due_date (date), order_group_id (int)",
     },
 
     # ── SELLERS ───────────────────────────────────────────────────────────────
@@ -879,6 +990,7 @@ MCP_TOOL_CATALOG = {
     "api_v1_sellers_get": {
         "path": "/api/v1/sellers/{id}/",
         "description": "Returns a single seller by ID with full details.",
+        "fields": "id (int), name (str), slug (str), is_active (bool), location_count (int), created_on (datetime)",
     },
 
     # ── SETUP INTENTS / STRIPE ────────────────────────────────────────────────
@@ -889,6 +1001,8 @@ MCP_TOOL_CATALOG = {
             "Returns Stripe SetupIntents for the authenticated user group (used to add payment methods). "
             "Not useful for analytics."
         ),
+    
+        "fields": "id (str), client_secret (str), status (str)",
     },
     "api_v1_stripe_payment_methods_list": {
         "path": "/api/v1/stripe/payment-methods/",
@@ -897,6 +1011,8 @@ MCP_TOOL_CATALOG = {
             "Fields: id, type, card (last4, brand, exp_month, exp_year), created. "
             "Use this to list saved Stripe payment methods."
         ),
+    
+        "fields": "id (str), type (str), card.last4 (str), card.brand (str), card.exp_month (int), card.exp_year (int), created (datetime)",
     },
 
     # ── TASKS ─────────────────────────────────────────────────────────────────
@@ -909,26 +1025,33 @@ MCP_TOOL_CATALOG = {
             "assigned_to, created_by, related_user_group, created_on. "
             "Use this to list open tasks, track task completion rates, or audit CRM activity."
         ),
+    
+        "fields": "id (int), title (str), status (str: open/in_progress/done), due_date (date), assigned_to_id (int), created_by_id (int), related_user_group_id (int), created_on (datetime)",
     },
     "api_v1_tasks_get": {
         "path": "/api/v1/tasks/{id}/",
         "description": "Returns a single task by ID.",
+        "fields": "id (int), title (str), description (str), status (str), due_date (date), assigned_to_id (int), created_on (datetime)",
     },
     "api_v1_tasks_activities_list": {
         "path": "/api/v1/tasks/{id}/activities/",
         "description": "Returns the activity log (status changes, edits) for a specific task.",
+        "fields": "id (int), action (str), changed_by (str), created_on (datetime)",
     },
     "api_v1_tasks_attachments_list": {
         "path": "/api/v1/tasks/{id}/attachments/",
         "description": "Returns file attachments for a specific task.",
+        "fields": "id (int), file_url (str), filename (str), uploaded_by (str), created_on (datetime)",
     },
     "api_v1_tasks_comments_list": {
         "path": "/api/v1/tasks/{id}/comments/",
         "description": "Returns comments on a specific task.",
+        "fields": "id (int), content (str), author_id (int), author_name (str), created_on (datetime)",
     },
     "api_v1_tasks_watchers_list": {
         "path": "/api/v1/tasks/{id}/watchers/",
         "description": "Returns users watching a specific task for notifications.",
+        "fields": "id (int), user_id (int), user_name (str), email (str)",
     },
 
     # ── TIME SLOTS ────────────────────────────────────────────────────────────
@@ -941,10 +1064,13 @@ MCP_TOOL_CATALOG = {
             "Lookup table only — no order data, no counts, no analytics. "
             "Use only to get time slot IDs for order creation or display labels in UI."
         ),
+    
+        "fields": "id (int), label (str), start_time (time), end_time (time)",
     },
     "api_v1_time_slots_get": {
         "path": "/api/v1/time-slots/{id}/",
         "description": "Returns a single time slot by ID.",
+        "fields": "id (int), label (str), start_time (time), end_time (time)",
     },
 
     # ── USER ADDRESS TYPES ────────────────────────────────────────────────────
@@ -956,10 +1082,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, name (e.g. construction_site, residential, commercial). "
             "Use this to get address type IDs for filtering or categorizing job sites."
         ),
+    
+        "fields": "id (int), name (str)",
     },
     "api_v1_user_address_types_get": {
         "path": "/api/v1/user-address-types/{id}/",
         "description": "Returns a single user address type by ID.",
+        "fields": "id (int), name (str)",
     },
 
     # ── USER ADDRESSES (JOB SITES) ────────────────────────────────────────────
@@ -975,6 +1104,8 @@ MCP_TOOL_CATALOG = {
             "Use this to list job sites for an account, find sites by geography, "
             "count active projects per account, or get site IDs for order filtering."
         ),
+    
+        "fields": "id (int), name (str), address (str), city (str), state (str), zip_code (str), latitude (float), longitude (float), user_group_id (int), is_active (bool), created_on (datetime)",
     },
     "api_v1_user_addresses_filter_options_list": {
         "path": "/api/v1/user-addresses/filter_options/",
@@ -982,10 +1113,13 @@ MCP_TOOL_CATALOG = {
             "Returns available filter options for the user addresses (job sites) list. "
             "Returns distinct city/state values for building filter UI."
         ),
+    
+        "fields": "cities (JSON str: [str]), states (JSON str: [str])",
     },
     "api_v1_user_addresses_get": {
         "path": "/api/v1/user-addresses/{id}/",
         "description": "Returns a single user address (job site) by ID.",
+        "fields": "id (int), name (str), address (str), city (str), state (str), zip_code (str), user_group_id (int), is_active (bool)",
     },
     "api_v1_user_addresses_recommendations_list": {
         "path": "/api/v1/user-addresses/{id}/recommendations/",
@@ -995,6 +1129,7 @@ MCP_TOOL_CATALOG = {
             "Fields: id, main_product_id, main_product_name, reason, confidence_score. "
             "Use this to see what products are recommended for a project."
         ),
+        "fields": "id (int), main_product_id (int), main_product_name (str), reason (str), confidence_score (float)",
     },
 
     # ── USER GROUP ADMIN APPROVALS ────────────────────────────────────────────
@@ -1006,10 +1141,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, user_group, invited_email, invited_by, status, created_on. "
             "Use this to list pending invitations awaiting admin approval."
         ),
+    
+        "fields": "id (int), user_group_id (int), invited_email (str), invited_by (str), status (str), created_on (datetime)",
     },
     "api_v1_user_group_admin_approval_user_invite_get": {
         "path": "/api/v1/user-group-admin-approval-user-invite/{id}/",
         "description": "Returns a single user invite approval request by ID.",
+        "fields": "id (int), user_group_id (int), invited_email (str), invited_by (str), status (str)",
     },
 
     # ── USER GROUP CREDIT APPLICATIONS ────────────────────────────────────────
@@ -1022,10 +1160,13 @@ MCP_TOOL_CATALOG = {
             "first_name, last_name, email, requested_credit_limit, created_on. "
             "Use this to list credit applications, track approval status, or count pending reviews."
         ),
+    
+        "fields": "id (int), user_group_id (int), status (str: pending/approved/denied), first_name (str), last_name (str), email (str), requested_credit_limit (float), created_on (datetime)",
     },
     "api_v1_user_group_credit_applications_get": {
         "path": "/api/v1/user-group-credit-applications/{id}/",
         "description": "Returns a single credit application by ID.",
+        "fields": "id (int), user_group_id (int), status (str), first_name (str), last_name (str), email (str), requested_credit_limit (float)",
     },
 
     # ── USER GROUPS (ACCOUNTS) ────────────────────────────────────────────────
@@ -1053,6 +1194,7 @@ MCP_TOOL_CATALOG = {
             "Use expand[] params to include: seller, account_owner, users, credit_applications, "
             "credit_limit_utilized, insurance_summary, latest_policies."
         ),
+        "fields": "id (int), name (str), industry (str), company_size (str), net_terms (bool), is_active (bool), created_on (datetime)",
     },
 
     # ── USER IDENTITY ─────────────────────────────────────────────────────────
@@ -1064,6 +1206,8 @@ MCP_TOOL_CATALOG = {
             "Fields: is_verified, verification_status, verified_at. "
             "Use this to check if the current user has completed identity verification."
         ),
+    
+        "fields": "is_verified (bool), verification_status (str), verified_at (datetime)",
     },
 
     # ── USERS ─────────────────────────────────────────────────────────────────
@@ -1079,6 +1223,8 @@ MCP_TOOL_CATALOG = {
             "Use this to count users per account, list users by type, "
             "find which accounts have onboarded users, or get user IDs for cohort analysis."
         ),
+    
+        "fields": "id (int), email (str), first_name (str), last_name (str), type (str: ADMIN/MEMBER/VIEW_ONLY), is_onboarded (bool), is_active (bool), is_archived (bool), user_group.id (int), user_group.name (str)",
     },
     "api_v1_users_me_list": {
         "path": "/api/v1/users/me/",
@@ -1086,10 +1232,13 @@ MCP_TOOL_CATALOG = {
             "Returns the currently authenticated user's full profile. "
             "Use this to identify who is making requests (role, account, type)."
         ),
+    
+        "fields": "id (int), email (str), first_name (str), last_name (str), type (str), user_group.id (int), user_group.name (str)",
     },
     "api_v1_users_get": {
         "path": "/api/v1/users/{user_id}/",
         "description": "Returns a single user by ID.",
+        "fields": "id (int), email (str), first_name (str), last_name (str), type (str), is_active (bool), user_group.id (int), user_group.name (str)",
     },
 
     # ── WASTE TYPES ───────────────────────────────────────────────────────────
@@ -1102,10 +1251,13 @@ MCP_TOOL_CATALOG = {
             "Contains no transactional data, no order counts, no usage frequency, no rankings. "
             "Use only to get an ID or display label."
         ),
+    
+        "fields": "id (int), name (str), slug (str), description (str), is_hazardous (bool)",
     },
     "api_v1_waste_types_get": {
         "path": "/api/v1/waste-types/{id}/",
         "description": "Returns a single waste type by ID or slug.",
+        "fields": "id (int), name (str), slug (str), description (str), is_hazardous (bool)",
     },
 
     # ── CHECKOUT ──────────────────────────────────────────────────────────────
@@ -1117,6 +1269,8 @@ MCP_TOOL_CATALOG = {
             "A Cart is a pre-order container — items added before checkout. "
             "Use this to count carts, track cart creation trends, or list active shopping sessions."
         ),
+    
+        "fields": "id (int), user_address_id (int), item_count (int), total_price (float), created_on (datetime)",
     },
     "checkout_v1_cart_list": {
         "path": "/checkout/v1/cart/",
@@ -1125,6 +1279,8 @@ MCP_TOOL_CATALOG = {
             "Fields: cart_groups (grouped by seller_location), cart_items (product, quantity, price, delivery_date). "
             "Use this to inspect the contents of the current user's active cart."
         ),
+    
+        "fields": "cart_groups (JSON str: [{seller_location_id, items: [{product, quantity, price}]}])",
     },
     "checkout_v1_cart_count_list": {
         "path": "/checkout/v1/cart/count/",
@@ -1133,6 +1289,8 @@ MCP_TOOL_CATALOG = {
             "Fields: count. "
             "Use this for the cart badge count in the navbar."
         ),
+    
+        "fields": "count (int)",
     },
     "checkout_v1_carts_list": {
         "path": "/checkout/v1/carts/",
@@ -1141,10 +1299,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, user_address_id, item_count, total_price, created_on, updated_on. "
             "Use this to list carts by job site, count carts per account, or track cart activity."
         ),
+    
+        "fields": "id (int), user_address_id (int), item_count (int), total_price (float), created_on (datetime), updated_on (datetime)",
     },
     "checkout_v1_carts_get": {
         "path": "/checkout/v1/carts/{cart_id}/",
         "description": "Returns a single cart by ID with full CartGroup and CartItem details.",
+        "fields": "id (int), user_address_id (int), item_count (int), total_price (float), cart_groups (JSON str)",
     },
     "checkout_v1_quote_accept_list": {
         "path": "/checkout/v1/quote/accept/",
@@ -1152,6 +1313,8 @@ MCP_TOOL_CATALOG = {
             "Returns the result of accepting a quote (converting a quote to a confirmed order). "
             "Use this to trigger quote acceptance in the checkout flow."
         ),
+    
+        "fields": "order_group_id (int), status (str), total (float)",
     },
     "checkout_v1_quote_get": {
         "path": "/checkout/v1/quote/{cart_id}/",
@@ -1159,10 +1322,12 @@ MCP_TOOL_CATALOG = {
             "Price preview tool. Shows itemized cost before a buyer completes a purchase: "
             "line items, taxes, delivery fees, subtotal, total. Single-session use only."
         ),
+        "fields": "subtotal (float), delivery_fee (float), taxes (float), total (float), line_items (JSON str: [{product, quantity, price}])",
     },
     "checkout_v1_get": {
         "path": "/checkout/v1/{id}/",
         "description": "Returns a single cart by ID.",
+        "fields": "id (int), user_address_id (int), item_count (int), total_price (float)",
     },
 
     # ── EXPLORE / SEARCH ──────────────────────────────────────────────────────
@@ -1174,6 +1339,8 @@ MCP_TOOL_CATALOG = {
             "Given a base item ID and a set of add-on selections, returns the matching variant. "
             "Transactional UI helper — no historical data, no aggregation, no reporting."
         ),
+    
+        "fields": "main_product_id (int), variant_id (int), name (str), price (float)",
     },
     "explore_v1_search_list": {
         "path": "/explore/v1/search/",
@@ -1186,6 +1353,8 @@ MCP_TOOL_CATALOG = {
             "Use this to search for products by name, find what categories match a query, "
             "or look up products available at a specific location."
         ),
+    
+        "fields": "main_products (JSON str: [{id, name, category}]), main_product_categories (JSON str: [{id, name, slug}]), main_product_category_groups (JSON str: [{id, name}])",
     },
 
     # ── FINANCIAL ACCOUNTS ────────────────────────────────────────────────────
@@ -1197,10 +1366,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, institution_name, account_name, account_type, mask (last 4 digits), status. "
             "Use this to list connected bank accounts for an account."
         ),
+    
+        "fields": "id (int), institution_name (str), account_name (str), account_type (str), mask (str), status (str)",
     },
     "financial_accounts_v1_financial_connection_account_get": {
         "path": "/financial-accounts/v1/financial-connection-account/{id}/",
         "description": "Returns a single financial connection account by ID.",
+        "fields": "id (int), institution_name (str), account_name (str), account_type (str), mask (str), status (str)",
     },
     "financial_accounts_v1_financial_statement_list": {
         "path": "/financial-accounts/v1/financial-statement/",
@@ -1209,10 +1381,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, account_id, date, description, amount, transaction_type. "
             "Use this to retrieve bank transaction history for an account."
         ),
+    
+        "fields": "id (int), account_id (int), date (date), description (str), amount (float), transaction_type (str)",
     },
     "financial_accounts_v1_financial_statement_get": {
         "path": "/financial-accounts/v1/financial-statement/{id}/",
         "description": "Returns a single financial statement by ID.",
+        "fields": "id (int), account_id (int), date (date), description (str), amount (float), transaction_type (str)",
     },
 
     # ── MATCHING ENGINE ───────────────────────────────────────────────────────
@@ -1226,6 +1401,8 @@ MCP_TOOL_CATALOG = {
             "Fields: seller_location_id, seller_name, price, delivery_fee, availability, distance_miles. "
             "Use this to find which suppliers can fulfill a product request at a given address."
         ),
+    
+        "fields": "seller_location_id (int), seller_name (str), price (float), delivery_fee (float), distance_miles (float)",
     },
     "matching_engine_v1_seller_product_seller_locations_by_lat_long_list": {
         "path": "/matching-engine/v1/seller-product-seller-locations-by-lat-long/",
@@ -1235,6 +1412,8 @@ MCP_TOOL_CATALOG = {
             "Returns ranked SellerProductSellerLocations sorted by distance and price. "
             "Use this when you have coordinates but not a structured address."
         ),
+    
+        "fields": "seller_location_id (int), seller_name (str), price (float), delivery_fee (float), distance_miles (float)",
     },
 
     # ── NOTIFICATIONS ─────────────────────────────────────────────────────────
@@ -1246,10 +1425,13 @@ MCP_TOOL_CATALOG = {
             "Fields: id, title, body, type, read_at, created_on. "
             "Use this to list recent notifications for a user."
         ),
+    
+        "fields": "id (int), title (str), body (str), type (str), read_at (datetime), created_on (datetime)",
     },
     "notifications_v1_push_notifications_get": {
         "path": "/notifications/v1/push-notifications/{id}/",
         "description": "Returns a single push notification by ID.",
+        "fields": "id (int), title (str), body (str), type (str), read_at (datetime), created_on (datetime)",
     },
 
     # ── PRICING ENGINE ────────────────────────────────────────────────────────
@@ -1262,6 +1444,8 @@ MCP_TOOL_CATALOG = {
             "Returns: base_price, delivery_fee, total_price, rental_period, fuel_surcharge. "
             "Use this to get the exact price a customer at given coordinates would pay for a listing."
         ),
+    
+        "fields": "base_price (float), delivery_fee (float), total_price (float), rental_period (str), fuel_surcharge (float)",
     },
     "pricing_engine_v1_seller_product_seller_location_pricing_list": {
         "path": "/pricing-engine/v1/seller-product-seller-location-pricing/",
@@ -1281,6 +1465,8 @@ MCP_TOOL_CATALOG = {
             "Fields: supplier_count_nearby, average_price, price_range (min/max), competitive_index. "
             "Requires a specific location — not an analytics or reporting endpoint."
         ),
+    
+        "fields": "supplier_count_nearby (int), average_price (float), price_range.min (float), price_range.max (float), competitive_index (float)",
     },
 }
 
