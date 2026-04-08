@@ -51,12 +51,14 @@ llm_mini = ChatOpenAI(
 
 
 # ─────────────────────────────────────────────
-# Downstream API client (direct HTTP, no MCP)
+# Direct HTTP client (read-only / GET tools)
 # ─────────────────────────────────────────────
+import asyncio
+import threading
 import requests
 
-_API_BASE  = os.getenv("DOWNSTREAM_API_URL", "https://api.trydownstream.com")
-_API_KEY   = os.getenv("MCP_API_KEY", "")
+_API_BASE    = os.getenv("DOWNSTREAM_API_URL", "https://api.trydownstream.com")
+_API_KEY     = os.getenv("MCP_API_KEY", "")
 _API_HEADERS = {"X-API-KEY": _API_KEY, "Content-Type": "application/json"}
 
 
@@ -83,6 +85,37 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
         query["starting_after"] = page[-1]["id"]
 
     return rows
+
+
+# ─────────────────────────────────────────────
+# MCP client (non-read-only / mutating tools)
+# ─────────────────────────────────────────────
+# Runs in a background thread to avoid conflicting with LangGraph's event loop.
+_bg_loop = asyncio.new_event_loop()
+threading.Thread(target=_bg_loop.run_forever, daemon=True).start()
+
+_mcp_tools = None
+
+
+def _run(coro):
+    """Submit a coroutine to the background event loop and block until done."""
+    return asyncio.run_coroutine_threadsafe(coro, _bg_loop).result()
+
+
+def get_mcp_tools():
+    global _mcp_tools
+    if _mcp_tools is not None:
+        return _mcp_tools
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+    client = MultiServerMCPClient({
+        "downstream": {
+            "url": os.getenv("MCP_SERVER_URL", "https://mcp.trydownstream.com/mcp"),
+            "transport": "streamable_http",
+            "headers": {"X-API-Key": _API_KEY},
+        }
+    })
+    _mcp_tools = _run(client.get_tools())
+    return _mcp_tools
 
 
 # ─────────────────────────────────────────────
@@ -292,13 +325,30 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     if not tool_info:
         return {**state, "error": f"Unknown tool: {tool_name}"}
 
-    path = tool_info["path"]
-    console.print(f"[green]  → GET {_API_BASE}{path}[/]")
+    is_readonly = tool_info.get("method", "GET").upper() == "GET"
 
-    try:
-        all_rows = fetch_all_pages(path)
-    except Exception as e:
-        return {**state, "error": f"API fetch error ({path}): {e}"}
+    if is_readonly:
+        # Read-only: call Downstream API directly (fast, no size limits)
+        path = tool_info["path"]
+        console.print(f"[green]  → Direct API: GET {_API_BASE}{path}[/]")
+        try:
+            all_rows = fetch_all_pages(path)
+        except Exception as e:
+            return {**state, "error": f"API fetch error ({path}): {e}"}
+    else:
+        # Mutating tool: route through MCP (handles auth + side effects)
+        console.print(f"[green]  → MCP call: {tool_name}[/]")
+        try:
+            tools = get_mcp_tools()
+            tool_fn = next((t for t in tools if t.name == tool_name), None)
+            if not tool_fn:
+                return {**state, "error": f"Tool not found in MCP: {tool_name}"}
+            result = _run(tool_fn.ainvoke({}))
+            raw = result[0].get("text", "") if isinstance(result, list) and result else json.dumps(result)
+            data = json.loads(raw) if raw else {}
+            all_rows = data.get("data", data.get("results", [data] if isinstance(data, dict) else data))
+        except Exception as e:
+            return {**state, "error": f"MCP tool error: {e}"}
 
     console.print(f"[green]  → Got {len(all_rows)} rows[/]")
 
