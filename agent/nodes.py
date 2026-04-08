@@ -276,53 +276,40 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     sentence = _current_sentence(state)
     _print_step(f"🔌  MCP FETCH  [step {state['current_idx']+1}]", "green", sentence)
 
+    # Extract tool name directly from the sentence — no LLM needed
+    # Format: "FETCH: <tool_name> [optional filter description]"
+    after_fetch = sentence[len("FETCH:"):].strip()
+    tool_name = after_fetch.split()[0]
+
     tools = get_mcp_tools()
-    agent_llm = llm.bind_tools(tools)
+    tool_fn = next((t for t in tools if t.name == tool_name), None)
 
-    prompt = f"""
-You are a data fetcher. Call the most appropriate MCP tool to fulfill this request.
-Fetch ALL pages if the response is paginated.
-Return the raw result as-is.
+    if tool_fn is None:
+        return {**state, "error": f"Tool not found: {tool_name}"}
 
-Request: {sentence}
-""".strip()
+    console.print(f"[green]  → Calling tool: [bold]{tool_name}[/][/]")
 
-    response = agent_llm.invoke(prompt)
+    try:
+        result = asyncio.run(tool_fn.ainvoke({}))
+        if isinstance(result, str):
+            try:
+                data = json.loads(result)
+            except Exception:
+                data = result
+        else:
+            data = result
 
-    # Execute tool calls
-    all_rows = []
-    if hasattr(response, "tool_calls") and response.tool_calls:
-        for tool_call in response.tool_calls:
-            tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
-            console.print(f"[green]  → Calling tool: [bold]{tool_name}[/] with {tool_args}[/]")
+        if isinstance(data, dict):
+            rows = data.get("results", data.get("data", [data]))
+        elif isinstance(data, list):
+            rows = data
+        else:
+            rows = [{"result": str(data)}]
+    except Exception as e:
+        return {**state, "error": f"MCP tool error: {e}"}
 
-            tool_fn = next((t for t in tools if t.name == tool_name), None)
-            if tool_fn:
-                try:
-                    result = asyncio.run(tool_fn.ainvoke(tool_args))
-                    if isinstance(result, str):
-                        try:
-                            data = json.loads(result)
-                        except Exception:
-                            data = result
-                    else:
-                        data = result
-
-                    if isinstance(data, dict):
-                        rows = data.get("results", data.get("data", [data]))
-                    elif isinstance(data, list):
-                        rows = data
-                    else:
-                        rows = [{"result": str(data)}]
-
-                    all_rows.extend(rows)
-                    console.print(f"[green]  → Got {len(rows)} rows[/]")
-                except Exception as e:
-                    return {**state, "error": f"MCP tool error: {e}"}
-    else:
-        console.print("[yellow]  → No tool call made, using LLM response as data[/]")
-        all_rows = [{"response": response.content}]
+    all_rows = rows
+    console.print(f"[green]  → Got {len(all_rows)} rows[/]")
 
     # Save to temp CSV — named by fetch order (not sentence index)
     fetch_idx = len(state["temp_files"])
