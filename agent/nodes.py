@@ -70,9 +70,7 @@ def _headers_for(path: str) -> dict:
         return _INSIGHT_HEADERS
     return _API_HEADERS
 
-
-MAX_FETCH_ROWS = 10_000  # cap to avoid multi-minute fetches on large tables
-
+MAX_FETCH_ROWS = 10_000     # cap to avoid multi-minute fetches on large tables
 
 def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
     """Fetch all pages from a cursor-paginated Downstream API endpoint."""
@@ -114,7 +112,7 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
         rows.extend(page)
 
         if len(rows) >= MAX_FETCH_ROWS:
-            break  # cap reached — return what we have so far
+            break       # cap reached - return what we have so far
 
         if not data.get("has_more") or not page:
             break
@@ -175,8 +173,6 @@ def _current_sentence(state: AgentState) -> str:
 def _format_tool_block(name: str, info: dict) -> str:
     """Format one tool entry for the reasoning prompt (description + CSV fields if available)."""
     lines = [f"  {name}", f"    -> {info['description']}"]
-    if info.get("requires_id"):
-        lines.append(f"    -> ⚠️  REQUIRES path parameter (single-resource only, cannot bulk-fetch)")
     if "fields" in info:
         lines.append(f"    -> CSV columns: {info['fields']}")
     return "\n".join(lines)
@@ -204,7 +200,6 @@ Rules:
 - Read each tool description carefully
 - Select only tools whose data directly answers the question
 - Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
-- NEVER select tools marked "REQUIRES path parameter" — they cannot be bulk-fetched
 - Output a JSON array of tool names only, nothing else
 - If multiple fetches are needed (e.g. orders + users), include all required tools
 
@@ -364,13 +359,6 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     if not tool_info:
         return {**state, "error": f"Unknown tool: {tool_name}"}
 
-    # Reject tools that require a path parameter — they cannot be bulk-fetched
-    if "{" in tool_info["path"]:
-        return {**state, "error": (
-            f"Tool '{tool_name}' requires a path parameter ({tool_info['path']}) "
-            f"and cannot be bulk-fetched. Use a list endpoint instead."
-        )}
-
     is_readonly = tool_info.get("method", "GET").upper() == "GET"
 
     if is_readonly:
@@ -397,7 +385,7 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
             return {**state, "error": f"MCP tool error: {e}"}
 
     cap_note = f" [yellow](capped at {MAX_FETCH_ROWS})[/]" if len(all_rows) >= MAX_FETCH_ROWS else ""
-    console.print(f"[green]  → Got {len(all_rows)} rows[/]{cap_note}")
+    console.print(f"[green] → Got {len(all_rows)} rows[/]")
 
     # Save to temp CSV — named by fetch order (not sentence index)
     fetch_idx = len(state["temp_files"])
