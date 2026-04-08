@@ -15,7 +15,8 @@ from rich.panel import Panel
 from rich.text import Text
 
 from agent.state import AgentState
-from agent.schema_rag import get_relevant_schema, get_relevant_tools
+from agent.schema_rag import get_relevant_schema
+from agent.tool_selector import get_relevant_tools
 
 load_dotenv()
 

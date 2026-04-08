@@ -7,7 +7,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import json
 from dotenv import load_dotenv
-from agent.schema_rag import get_relevant_tools
+from agent.tool_selector import get_relevant_tools
 
 load_dotenv()
 
