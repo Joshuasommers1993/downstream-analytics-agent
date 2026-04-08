@@ -548,6 +548,7 @@ MCP_TOOL_CATALOG = {
         ),
     
         "fields": "document_id (int), slug (str), heading (str), score (float), excerpt (str)",
+        "method": "POST",
     },
     "api_v1_knowledge_get": {
         "path": "/api/v1/knowledge/{knowledge_document_id}/",
@@ -1341,6 +1342,7 @@ MCP_TOOL_CATALOG = {
         ),
     
         "fields": "main_product_id (int), variant_id (int), name (str), price (float)",
+        "method": "POST",
     },
     "explore_v1_search_list": {
         "path": "/explore/v1/search/",
@@ -1403,6 +1405,7 @@ MCP_TOOL_CATALOG = {
         ),
     
         "fields": "seller_location_id (int), seller_name (str), price (float), delivery_fee (float), distance_miles (float)",
+        "method": "POST",
     },
     "matching_engine_v1_seller_product_seller_locations_by_lat_long_list": {
         "path": "/matching-engine/v1/seller-product-seller-locations-by-lat-long/",
@@ -1414,6 +1417,7 @@ MCP_TOOL_CATALOG = {
         ),
     
         "fields": "seller_location_id (int), seller_name (str), price (float), delivery_fee (float), distance_miles (float)",
+        "method": "POST",
     },
 
     # ── NOTIFICATIONS ─────────────────────────────────────────────────────────
@@ -1446,6 +1450,7 @@ MCP_TOOL_CATALOG = {
         ),
     
         "fields": "base_price (float), delivery_fee (float), total_price (float), rental_period (str), fuel_surcharge (float)",
+        "method": "POST",
     },
     "pricing_engine_v1_seller_product_seller_location_pricing_list": {
         "path": "/pricing-engine/v1/seller-product-seller-location-pricing/",
@@ -1456,6 +1461,7 @@ MCP_TOOL_CATALOG = {
             "Use this to get the price a customer at a specific address would pay."
         ),
         "fields": "base_price (float), delivery_fee (float), total_price (float), rental_period (str), fuel_surcharge (float)",
+        "method": "POST",
     },
     "pricing_engine_v1_supplier_insights_list": {
         "path": "/pricing-engine/v1/supplier-insights/",
@@ -1467,6 +1473,7 @@ MCP_TOOL_CATALOG = {
         ),
     
         "fields": "supplier_count_nearby (int), average_price (float), price_range.min (float), price_range.max (float), competitive_index (float)",
+        "method": "POST",
     },
 }
 
