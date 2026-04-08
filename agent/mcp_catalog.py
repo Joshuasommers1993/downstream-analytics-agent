@@ -84,12 +84,11 @@ MCP_TOOL_CATALOG = {
     "api_insight_hub_first_touch_to_order_list": {
         "path": "/api/insight-hub/first-touch-to-order/",
         "description": (
-            "Pre-computed conversion funnel metric: time from first email touch to first confirmed order. "
-            "Returns average_days (mean days from first outreach to order), total_conversions (number of converted carts), "
-            "and details array (cart_id, user_group_name, days_to_order). "
+            "Sales cycle speed metric — how many days from first email outreach to first order. "
+            "Returns average_days (mean days), total_conversions, and details per account. "
             "Filters: start_date, end_date. "
-            "Use this for sales cycle length analysis, email-to-order conversion speed, "
-            "or to identify which accounts converted fastest after first outreach."
+            "Use this for outreach-to-order speed, sales cycle length, or email response latency. "
+            "Not suitable for funnel stage drop-off or cart-to-order rate — use api_insight_hub_sales_funnel_list for those."
         ),
     },
     "api_insight_hub_gmv_by_state_list": {
@@ -117,12 +116,11 @@ MCP_TOOL_CATALOG = {
     "api_insight_hub_product_mix_list": {
         "path": "/api/insight-hub/product-mix/",
         "description": (
-            "Pre-computed breakdown of orders by product/waste type category showing volume and share. "
-            "Best tool for: top waste types by order volume, which product categories are ordered most, "
-            "order count per product type, product mix percentage, category share of total bookings. "
-            "Returns categories array (category name, order_count, percent of total orders) and total_orders count. "
-            "Filters: start_date, end_date. "
-            "Use this when the question asks which product or waste type is most popular by order count."
+            "Order volume by waste type or service category. "
+            "Top waste types ranked by how many orders were placed for each. "
+            "Which material categories are ordered most. Frequency and share of each service type. "
+            "Pre-computed: category name, order_count, percent of total orders, total_orders. "
+            "Filters: start_date, end_date."
         ),
     },
     "api_insight_hub_quota_vs_actual_list": {
@@ -149,11 +147,10 @@ MCP_TOOL_CATALOG = {
     "api_insight_hub_sales_funnel_list": {
         "path": "/api/insight-hub/sales-funnel/",
         "description": (
-            "Pre-computed sales funnel with stage-by-stage counts, GMV, and conversion rates. "
-            "Best tool for: conversion rate from cart to confirmed order, drop-off rate at each funnel stage, "
-            "cart-to-quote rate, quote-to-close rate, overall funnel win rate, which stage loses the most deals. "
-            "Returns stages array (stage: cart/quote/order/invoice/payment, count, gmv) "
-            "and conversion_rates (cart_to_quote, quote_to_close, overall). "
+            "Conversion rate from cart to confirmed order. Drop-off rate at each stage of the sales funnel. "
+            "Cart-to-quote rate, quote-to-close rate, overall win rate, which stage loses the most deals. "
+            "Pre-computed funnel with stage-by-stage counts and GMV: cart, quote, order, invoice, payment. "
+            "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
             "Filters: start_date, end_date."
         ),
     },
@@ -181,13 +178,11 @@ MCP_TOOL_CATALOG = {
     "api_insight_hub_take_rate_mom_list": {
         "path": "/api/insight-hub/take-rate-mom/",
         "description": (
-            "Pre-computed Downstream platform margin (take rate) broken down by sales rep and month. "
-            "Returns rows array with: rep_id, rep_name, month (YYYY-MM), "
-            "customer_total (GMV), seller_total (cost paid to seller), "
-            "net_revenue (margin = customer_total - seller_total), take_rate_percent. "
-            "Filters: start_date, end_date, rep_id. "
-            "Use this for margin analysis per rep, platform economics by territory, "
-            "which reps negotiate better margins, or MoM take rate trend."
+            "Platform take rate trend over time. Downstream margin percentage month-over-month or year-over-year. "
+            "Net revenue and take rate percent per rep per month. Annual/monthly platform margin trend. "
+            "Returns rows: rep_id, rep_name, month (YYYY-MM), customer_total (GMV), "
+            "seller_total (supplier cost), net_revenue, take_rate_percent. "
+            "Filters: start_date, end_date, rep_id."
         ),
     },
 
@@ -1063,12 +1058,10 @@ MCP_TOOL_CATALOG = {
     "api_v1_waste_types_list": {
         "path": "/api/v1/waste-types/",
         "description": (
-            "Lookup table of waste type classifications — contains no order volume or revenue data. "
-            "NOT suitable for ranking waste types by order count or usage frequency. "
+            "Static reference lookup — returns IDs and names for accepted material categories. "
             "Fields: id, name, slug, description, is_hazardous. "
-            "Examples: general waste, concrete, dirt, mixed debris, green waste, roofing materials. "
-            "Use only to get waste type IDs for filtering or to list accepted material classifications. "
-            "For top waste types by order volume, use api_insight_hub_product_mix_list instead."
+            "Contains no transactional data, no order counts, no usage frequency, no rankings. "
+            "Use only to get an ID or display label."
         ),
     },
     "api_v1_waste_types_get": {
@@ -1124,9 +1117,8 @@ MCP_TOOL_CATALOG = {
     "checkout_v1_quote_get": {
         "path": "/checkout/v1/quote/{cart_id}/",
         "description": (
-            "Returns a price preview for a single cart before checkout. "
-            "NOT suitable for conversion rate analysis, funnel metrics, or aggregated analytics. "
-            "Use only to show a buyer the itemized cost of their current cart (pricing, taxes, delivery fees, total)."
+            "Price preview tool. Shows itemized cost before a buyer completes a purchase: "
+            "line items, taxes, delivery fees, subtotal, total. Single-session use only."
         ),
     },
     "checkout_v1_get": {
@@ -1139,10 +1131,9 @@ MCP_TOOL_CATALOG = {
     "explore_v1_main_product_match_list": {
         "path": "/explore/v1/main-product/match/",
         "description": (
-            "Product configuration tool — returns the variant that best matches a set of add-on choices. "
-            "NOT suitable for analytics, popularity, revenue, or industry analysis. "
-            "Input: product ID + add-on selections. "
-            "Use only for product configuration matching in the shop/checkout flow."
+            "Add-on configurator for the shop flow. "
+            "Given a base item ID and a set of add-on selections, returns the matching variant. "
+            "Transactional UI helper — no historical data, no aggregation, no reporting."
         ),
     },
     "explore_v1_search_list": {
@@ -1245,11 +1236,10 @@ MCP_TOOL_CATALOG = {
     "pricing_engine_v1_supplier_insights_list": {
         "path": "/pricing-engine/v1/supplier-insights/",
         "description": (
-            "Returns buyer-context pricing and supplier density for a specific delivery location. "
-            "NOT suitable for platform-wide analytics, margin trends, or take rate analysis. "
+            "Local market competitiveness check for a single buyer address. "
+            "How many vendors serve a specific delivery location and what the local benchmark cost is. "
             "Fields: supplier_count_nearby, average_price, price_range (min/max), competitive_index. "
-            "Use this only to check how competitive a specific buyer location is — "
-            "how many suppliers serve it and what the local price benchmark is."
+            "Requires a specific location — not an analytics or reporting endpoint."
         ),
     },
 }
