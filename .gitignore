@@ -2,7 +2,6 @@
 .env
 
 # Private internal files
-agent/mcp_catalog.py
 schema/tables.py
 
 # Python
