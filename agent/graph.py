@@ -42,6 +42,8 @@ def route_sentence_type(state: AgentState) -> str:
 
 def route_after_reasoning(state: AgentState) -> str:
     """After reasoning: give up on too many retries, else route to next sentence."""
+    if state.get("final_answer"):
+        return "fail"  # impossible verdict — final_answer already set, skip to END
     if state["error"] and state["ra_retries"] >= MAX_RA_RETRIES:
         return "fail"
     return "route_sentence"

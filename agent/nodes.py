@@ -186,55 +186,155 @@ def reasoning_node(state: AgentState) -> AgentState:
 
     # ── First call: build the full FETCH/COMPUTE plan ─────────────────────────
     if not state["logic_sentences"]:
+        from agent.mcp_catalog import MCP_TOOL_CATALOG
 
-        # Stage 1: RAG candidates → gpt-4o-mini selects only needed tools
-        console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
+        # ── Stage 0: decompose question into atomic data needs ────────────────
+        console.print("[blue]  → Stage 0: decomposing question into data needs...[/]")
 
-        candidates = get_relevant_tools(state["question"], top_k=8)
-
-        selection_prompt = f"""
-You are a tool selector. Given an analytics question and a list of candidate MCP tools,
-choose only the tools actually needed to answer the question.
+        decompose_prompt = f"""
+You are an analytics planner. Break this question into atomic data needs — each need
+is a specific metric or dimension that must be fetched from a data source.
 
 Rules:
-- Read each tool description carefully
-- Select only tools whose data directly answers the question
-- Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
-- Output a JSON array of tool names only, nothing else
-- If multiple fetches are needed (e.g. orders + users), include all required tools
-
-CANDIDATE TOOLS:
-{candidates}
+- Each need should be a short phrase describing one piece of data (e.g. "take_rate by product_category")
+- Be specific about dimensions (what it's grouped by)
+- 1-5 needs max
+- Output a JSON array of strings, nothing else
 
 Question: {state["question"]}
 
-Output JSON array of selected tool names only:
+Output JSON array of data needs only:
 """.strip()
 
-        sel_response = llm_mini.invoke(selection_prompt)
-        sel_raw = sel_response.content.strip()
-        if sel_raw.startswith("```"):
-            sel_raw = sel_raw.split("```")[1]
-            if sel_raw.startswith("json"):
-                sel_raw = sel_raw[4:]
-        sel_raw = sel_raw.strip()
+        decomp_raw = llm_mini.invoke(decompose_prompt).content.strip()
+        if decomp_raw.startswith("```"):
+            decomp_raw = decomp_raw.split("```")[1]
+            if decomp_raw.startswith("json"):
+                decomp_raw = decomp_raw[4:]
+        decomp_raw = decomp_raw.strip()
+        try:
+            data_needs = json.loads(decomp_raw)
+        except Exception:
+            data_needs = [n.strip(" -•") for n in decomp_raw.splitlines() if n.strip()]
+
+        console.print(f"[blue]  → Data needs:[/]")
+        for n in data_needs:
+            console.print(f"[blue]     • {n}[/]")
+
+        # ── Stage 1: RAG per data need → collect candidate tools ─────────────
+        console.print("[blue]  → Stage 1: RAG lookup per data need...[/]")
+
+        need_candidates: dict[str, str] = {}
+        for need in data_needs:
+            candidates = get_relevant_tools(need, top_k=3)
+            need_candidates[need] = candidates
+            console.print(f"[dim]     [{need}][/]")
+            for line in candidates.splitlines():
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                if stripped.startswith("->"):
+                    console.print(f"[dim]         {stripped}[/]")
+                else:
+                    console.print(f"[blue]       {stripped}[/]")
+
+        # ── Stage 2: validate — does a tool exist for each need? ─────────────
+        console.print("[blue]  → Stage 2: validating tool coverage and join keys...[/]")
+
+        all_candidates_block = "\n\n".join(
+            f"Need: {need}\nCandidates:\n{tools}"
+            for need, tools in need_candidates.items()
+        )
+
+        validation_prompt = f"""
+You are an analytics planner. For each data need below, decide if one of the candidate
+tools can satisfy it. Then check if all selected tools share a join key.
+
+For each need, output:
+- "tool": the exact tool name that best satisfies it, or null if none can
+- "join_key": the column name that connects this tool to others (e.g. "user_address_id"), or null if standalone
+
+Then output:
+- "joinable": true if all selected tools can be joined, false if they have no shared key
+- "verdict": "ok" if the question can be answered, "partial" if only some needs are covered,
+  or "impossible" if no tools cover the core needs
+- "reason": one sentence explaining any limitation
+
+Output valid JSON only:
+{{
+  "needs": [
+    {{"need": "...", "tool": "...", "join_key": "..."}},
+    ...
+  ],
+  "joinable": true/false,
+  "verdict": "ok"|"partial"|"impossible",
+  "reason": "..."
+}}
+
+DATA NEEDS AND CANDIDATES:
+{all_candidates_block}
+
+Question: {state["question"]}
+""".strip()
+
+        val_raw = llm.invoke(validation_prompt).content.strip()
+        if val_raw.startswith("```"):
+            val_raw = val_raw.split("```")[1]
+            if val_raw.startswith("json"):
+                val_raw = val_raw[4:]
+        val_raw = val_raw.strip()
 
         try:
-            selected_tools = json.loads(sel_raw)
+            validation = json.loads(val_raw)
         except Exception:
-            selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
+            validation = {"verdict": "ok", "needs": [], "joinable": True, "reason": ""}
+
+        verdict = validation.get("verdict", "ok")
+        reason = validation.get("reason", "")
+
+        console.print(f"[blue]  → Verdict: {verdict}[/]")
+        if reason:
+            console.print(f"[dim]     {reason}[/]")
+
+        joinable = validation.get("joinable", True)
+        if verdict == "impossible" or (not joinable and len(data_needs) > 1):
+            # Surface the limitation as the final answer instead of producing bad SQL
+            answer = f"This question cannot be answered with the available data. {reason}"
+            console.print(Panel(answer, title="[bold yellow]⚠️  Cannot Answer[/]", border_style="yellow", padding=(1, 2)))
+            return {**state, "logic_sentences": ["DONE"], "current_idx": 1, "final_answer": answer}
+
+        # Collect confirmed tools (skip needs with null tool)
+        confirmed = [
+            n["tool"] for n in validation.get("needs", [])
+            if n.get("tool") and n["tool"] in MCP_TOOL_CATALOG
+        ]
+        # Deduplicate while preserving order
+        seen = set()
+        selected_tools = [t for t in confirmed if not (t in seen or seen.add(t))]
+
+        if not selected_tools:
+            # Fallback: use RAG on the full question
+            fallback = get_relevant_tools(state["question"], top_k=5)
+            sel_raw2 = llm_mini.invoke(f"""
+Choose the tools needed to answer this question. Output a JSON array of tool names only.
+TOOLS:\n{fallback}\nQuestion: {state["question"]}
+""").content.strip()
+            if sel_raw2.startswith("```"):
+                sel_raw2 = sel_raw2.split("```")[1].lstrip("json").strip()
+            try:
+                selected_tools = json.loads(sel_raw2)
+            except Exception:
+                selected_tools = []
 
         console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
 
-        # Build focused tool block with descriptions + CSV field schemas
-        from agent.mcp_catalog import MCP_TOOL_CATALOG
         focused_tools = "\n".join(
             _format_tool_block(t, MCP_TOOL_CATALOG[t])
             for t in selected_tools if t in MCP_TOOL_CATALOG
-        ) or candidates  # fallback to full candidates if selection fails
+        )
 
-        # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
-        console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
+        # ── Stage 3: build FETCH/COMPUTE plan with SQL ────────────────────────
+        console.print("[blue]  → Stage 3: building execution plan with SQL...[/]")
 
         prompt = f"""
 You are a reasoning agent. Decompose this analytics question into an ordered execution plan.
@@ -252,6 +352,7 @@ Rules:
   * For dot-notation columns (e.g. conversion_rates.overall), quote them: "conversion_rates.overall"
   * SELECT only — no INSERT/UPDATE/DELETE
   * Return a concise, focused result
+  * When joining two tables, use an explicit JOIN ... ON condition — never a cartesian product
 - FETCH steps must come before COMPUTE steps that depend on them
 - Only fetch data you actually need
 - Output ONLY a JSON array of strings, nothing else
@@ -266,7 +367,6 @@ Output JSON array only:
 
         response = llm.invoke(prompt)
         raw = response.content.strip()
-
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
