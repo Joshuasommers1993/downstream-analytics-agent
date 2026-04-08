@@ -1,5 +1,13 @@
 """
 Builds and compiles the LangGraph state machine.
+
+Flow:
+  reasoning → route → mcp_fetch (FETCH steps) → reasoning → ...
+  reasoning → route → execution (COMPUTE steps) → reasoning → ...
+  reasoning → synthesize (when all steps done)
+
+SQL is embedded in COMPUTE sentences by the reasoning agent.
+The coding node has been removed — no separate SQL generation step.
 """
 
 from langgraph.graph import StateGraph, END
@@ -7,21 +15,19 @@ from agent.state import AgentState
 from agent.nodes import (
     reasoning_node,
     mcp_fetch_node,
-    coding_node,
     execution_node,
     synthesize_node,
 )
 
-MAX_RA_RETRIES  = 3
-MAX_COD_RETRIES = 3
+MAX_RA_RETRIES = 3
 
 
 # ─────────────────────────────────────────────
-# ROUTING FUNCTIONS  (the diamonds in the diagram)
+# ROUTING FUNCTIONS
 # ─────────────────────────────────────────────
 
 def route_sentence_type(state: AgentState) -> str:
-    """After reasoning: decide FETCH vs COMPUTE for current sentence."""
+    """Decide FETCH vs COMPUTE vs done for the current sentence."""
     sentences = state["logic_sentences"]
     idx = state["current_idx"]
 
@@ -31,34 +37,32 @@ def route_sentence_type(state: AgentState) -> str:
     sentence = sentences[idx]
     if sentence.upper().startswith("FETCH"):
         return "mcp_fetch"
-    return "coding"
+    return "execution"  # COMPUTE goes directly to execution (SQL is already in the sentence)
 
 
 def route_after_reasoning(state: AgentState) -> str:
-    """After reasoning node: give up if too many retries, else route sentence."""
+    """After reasoning: give up on too many retries, else route to next sentence."""
     if state["error"] and state["ra_retries"] >= MAX_RA_RETRIES:
         return "fail"
     return "route_sentence"
 
 
-def route_after_execution(state: AgentState) -> str:
-    """After execution: retry coding, escalate to reasoning, or advance."""
-    if state["error"]:
-        if state["cod_retries"] < MAX_COD_RETRIES:
-            return "coding"          # fix SQL, retry
-        return "reasoning"           # escalate — RA rephrases the logic
-
-    idx = state["current_idx"]
-    if idx < len(state["logic_sentences"]):
-        return "reasoning"           # next sentence
-    return "synthesize"              # all steps done
-
-
 def route_after_fetch(state: AgentState) -> str:
-    """After MCP fetch: error → reasoning escalation, else next step."""
+    """After MCP fetch: error → reasoning (for rephrase), else check next sentence."""
     if state["error"]:
         return "reasoning"
-    return "reasoning"               # always back to RA to send next sentence
+    if state["current_idx"] < len(state["logic_sentences"]):
+        return "reasoning"
+    return "synthesize"
+
+
+def route_after_execution(state: AgentState) -> str:
+    """After execution: error → reasoning (to fix SQL), else next sentence or done."""
+    if state["error"]:
+        return "reasoning"
+    if state["current_idx"] < len(state["logic_sentences"]):
+        return "reasoning"
+    return "synthesize"
 
 
 # ─────────────────────────────────────────────
@@ -68,47 +72,41 @@ def route_after_fetch(state: AgentState) -> str:
 def build_graph():
     g = StateGraph(AgentState)
 
-    g.add_node("reasoning",  reasoning_node)
-    g.add_node("mcp_fetch",  mcp_fetch_node)
-    g.add_node("coding",     coding_node)
-    g.add_node("execution",  execution_node)
-    g.add_node("synthesize", synthesize_node)
+    g.add_node("reasoning",           reasoning_node)
+    g.add_node("mcp_fetch",           mcp_fetch_node)
+    g.add_node("execution",           execution_node)
+    g.add_node("synthesize",          synthesize_node)
+    g.add_node("route_sentence_type", lambda s: s)   # pass-through routing node
 
     # Entry point
     g.set_entry_point("reasoning")
 
     # Reasoning → route or fail
     g.add_conditional_edges("reasoning", route_after_reasoning, {
-        "route_sentence": "route_sentence_type",   # virtual routing node
+        "route_sentence": "route_sentence_type",
         "fail": END,
     })
 
-    # Routing diamond: FETCH or COMPUTE?
+    # Routing: FETCH, COMPUTE (execution), or done
     g.add_conditional_edges("route_sentence_type", route_sentence_type, {
         "mcp_fetch":  "mcp_fetch",
-        "coding":     "coding",
+        "execution":  "execution",
         "synthesize": "synthesize",
     })
 
-    # MCP fetch → back to reasoning (to process next sentence or handle error)
+    # MCP fetch → reasoning (next sentence or rephrase on error)
     g.add_conditional_edges("mcp_fetch", route_after_fetch, {
-        "reasoning": "reasoning",
+        "reasoning":  "reasoning",
+        "synthesize": "synthesize",
     })
 
-    # Coding → execution
-    g.add_edge("coding", "execution")
-
-    # Execution → coding retry | reasoning escalate | synthesize
+    # Execution → reasoning (next sentence or fix SQL) or synthesize
     g.add_conditional_edges("execution", route_after_execution, {
-        "coding":    "coding",
-        "reasoning": "reasoning",
-        "synthesize":"synthesize",
+        "reasoning":  "reasoning",
+        "synthesize": "synthesize",
     })
 
     # Synthesize → done
     g.add_edge("synthesize", END)
-
-    # Add virtual routing node (needed for conditional edge source)
-    g.add_node("route_sentence_type", lambda s: s)   # pass-through
 
     return g.compile()

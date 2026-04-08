@@ -50,10 +50,8 @@ def main():
         "logic_sentences": [],
         "current_idx":     0,
         "temp_files":      [],
-        "current_sql":     "",
         "step_results":    [],
         "ra_retries":      0,
-        "cod_retries":     0,
         "error":           None,
         "final_answer":    None,
     }

@@ -6,21 +6,17 @@ class AgentState(TypedDict):
     question: str
 
     # Reasoning layer
-    logic_sentences: List[str]          # e.g. ["FETCH: get all sellers", "COMPUTE: count by city"]
+    logic_sentences: List[str]          # ["FETCH: tool_name ...", "COMPUTE: SELECT ..."]
     current_idx: int                    # which sentence we're on
 
     # MCP fetch layer
-    temp_files: List[str]               # paths of saved CSVs per FETCH step
-
-    # Coding layer
-    current_sql: str                    # SQL written for current COMPUTE step
+    temp_files: List[str]               # paths of saved CSVs, indexed by fetch order (FETCH_0, FETCH_1, ...)
 
     # Execution layer
-    step_results: List[str]             # accumulated scalar results per step
+    step_results: List[str]             # accumulated results per COMPUTE step
 
-    # Retry counters
-    ra_retries: int                     # reasoning agent retries
-    cod_retries: int                    # coding agent retries
+    # Retry counter
+    ra_retries: int                     # reasoning agent retries (covers both FETCH and SQL errors)
 
     # Error passing
     error: Optional[str]
