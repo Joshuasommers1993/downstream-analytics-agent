@@ -1,14 +1,13 @@
 """
-Step 3: Run the Reasoning Agent in isolation (two-stage).
+Step 3: Run the Reasoning Agent in isolation (two-stage, SQL-embedded COMPUTE).
 
-Stage 1: GPT-4o selects relevant tools from RAG top-8 candidates.
-Stage 2: GPT-4o builds FETCH/COMPUTE plan using only selected tools.
+Stage 1: gpt-4o-mini selects relevant tools from RAG top-8 candidates.
+Stage 2: gpt-4o builds FETCH/COMPUTE plan where COMPUTE steps contain DuckDB SQL with FETCH_N placeholders.
 
 Run: venv/bin/python3 checks/check_reasoning.py "your question here"
 """
-import sys, os
+import sys, os, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-import json
 from dotenv import load_dotenv
 from agent.tool_selector import get_relevant_tools
 from agent.mcp_catalog import MCP_TOOL_CATALOG
@@ -17,7 +16,8 @@ load_dotenv()
 
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(model="gpt-4o", api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
+llm_mini = ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
+llm      = ChatOpenAI(model="gpt-4o",      api_key=os.getenv("OPENAI_API_KEY"), temperature=0)
 
 question = sys.argv[1] if len(sys.argv) > 1 else "Which cities have the most sellers?"
 
@@ -25,11 +25,24 @@ print(f"\n{'='*60}")
 print(f"QUESTION: {question}")
 print(f"{'='*60}")
 
-# ── Stage 1: get RAG candidates, then select with GPT-4o ──────────────────────
+
+def _format_tool_block(name, info):
+    lines = [f"  {name}", f"    -> {info['description']}"]
+    if "fields" in info:
+        lines.append(f"    -> CSV columns: {info['fields']}")
+    return "\n".join(lines)
+
+
+# ── Stage 1: RAG candidates → mini selects ───────────────────────────────────
 candidates = get_relevant_tools(question, top_k=8)
 
 print("\n─── STAGE 1: RAG CANDIDATES (top-8) ────────────────────")
-print(candidates)
+for line in candidates.splitlines():
+    if line.strip().startswith("->"):
+        desc = line.strip()[2:].strip()
+        print(f"       {desc[:100]}{'...' if len(desc) > 100 else ''}")
+    else:
+        print(f"  {line.strip()}")
 
 selection_prompt = f"""
 You are a tool selector. Given an analytics question and a list of candidate MCP tools,
@@ -38,9 +51,9 @@ choose only the tools actually needed to answer the question.
 Rules:
 - Read each tool description carefully
 - Select only tools whose data directly answers the question
-- Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
+- Prefer pre-computed analytics endpoints (insight_hub) when available
 - Output a JSON array of tool names only, nothing else
-- If multiple fetches are needed (e.g. orders + users), include all required tools
+- Include all tools if multiple fetches are needed
 
 CANDIDATE TOOLS:
 {candidates}
@@ -50,14 +63,12 @@ Question: {question}
 Output JSON array of selected tool names only:
 """.strip()
 
-sel_response = llm.invoke(selection_prompt)
-sel_raw = sel_response.content.strip()
+sel_raw = llm_mini.invoke(selection_prompt).content.strip()
 if sel_raw.startswith("```"):
     sel_raw = sel_raw.split("```")[1]
     if sel_raw.startswith("json"):
         sel_raw = sel_raw[4:]
 sel_raw = sel_raw.strip()
-
 try:
     selected_tools = json.loads(sel_raw)
 except Exception:
@@ -68,26 +79,34 @@ for t in selected_tools:
     status = "✅" if t in MCP_TOOL_CATALOG else "❌ NOT IN CATALOG"
     print(f"  {status}  {t}")
 
-# Build focused tool block
+# Build focused tool block with field schemas
 focused_tools = "\n".join(
-    f"  {t}\n    -> {MCP_TOOL_CATALOG[t]['description']}"
+    _format_tool_block(t, MCP_TOOL_CATALOG[t])
     for t in selected_tools if t in MCP_TOOL_CATALOG
-) or candidates  # fallback to full candidates if selection fails
+) or candidates
 
-# ── Stage 2: build FETCH/COMPUTE plan ────────────────────────────────────────
+# ── Stage 2: build FETCH/COMPUTE plan with SQL ────────────────────────────────
 plan_prompt = f"""
-You are a reasoning agent. Decompose this analytics question into an ordered list of logic sentences.
+You are a reasoning agent. Decompose this analytics question into an ordered execution plan.
 
 Rules:
-- Each sentence starts with FETCH: or COMPUTE:
-- FETCH sentences must name the exact MCP tool to call, chosen from the list below
-- COMPUTE sentences describe a calculation on data already saved to temp files — no tool calls
-- FETCH sentences always come before the COMPUTE sentences that depend on them
-- Only add FETCH steps for data you actually need — do not fetch unnecessary tables
-- Keep each sentence short and specific (one action)
+- Each step is either FETCH or COMPUTE
+- FETCH steps: "FETCH: <exact_tool_name> [optional filter description]"
+  * Use the exact tool name from the list below
+  * Mention any filters (e.g. status=SCHEDULED, start_date=6 months ago)
+- COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
+  * Use read_csv_auto('FETCH_N') where N = 0-indexed FETCH step number
+    (FETCH_0 = result of the 1st FETCH, FETCH_1 = result of the 2nd FETCH, etc.)
+  * Use only the column names listed in each tool's "CSV columns"
+  * For JSON array columns, use json_extract(col, '$[*].field') to access items
+  * For dot-notation columns (e.g. conversion_rates.overall), quote them: "conversion_rates.overall"
+  * SELECT only — no INSERT/UPDATE/DELETE
+  * Return a concise, focused result
+- FETCH steps must come before COMPUTE steps that depend on them
+- Only fetch data you actually need
 - Output ONLY a JSON array of strings, nothing else
 
-AVAILABLE MCP TOOLS (use exact tool name in every FETCH sentence):
+AVAILABLE MCP TOOLS:
 {focused_tools}
 
 Question: {question}
@@ -95,15 +114,10 @@ Question: {question}
 Output JSON array only:
 """.strip()
 
-print("\n─── STAGE 2 PROMPT ──────────────────────────────────────")
-print(plan_prompt)
+print(f"\n─── STAGE 2 FOCUSED TOOLS ───────────────────────────────")
+print(focused_tools)
 
-response = llm.invoke(plan_prompt)
-raw = response.content.strip()
-
-print("\n─── STAGE 2 RAW RESPONSE ────────────────────────────────")
-print(raw)
-
+raw = llm.invoke(plan_prompt).content.strip()
 if raw.startswith("```"):
     raw = raw.split("```")[1]
     if raw.startswith("json"):
@@ -115,21 +129,25 @@ try:
 except Exception:
     sentences = [l.strip() for l in raw.splitlines() if l.strip().startswith(("FETCH:", "COMPUTE:"))]
 
-print("\n─── FINAL LOGIC PLAN ────────────────────────────────────")
+print(f"\n─── FINAL LOGIC PLAN ────────────────────────────────────")
 for i, s in enumerate(sentences):
     print(f"  {i+1}. {s}")
 
-# Validate tool names
-print("\n─── TOOL NAME VALIDATION ────────────────────────────────")
+# Validate
+print(f"\n─── VALIDATION ──────────────────────────────────────────")
 valid_tools = set(MCP_TOOL_CATALOG.keys())
-
 for s in sentences:
-    if not s.upper().startswith("FETCH:"):
-        continue
-    found = [t for t in valid_tools if t in s]
-    if found:
-        print(f"  ✅  {s}")
-        print(f"       tool: {found[0]}")
-    else:
-        print(f"  ❌  {s}")
-        print(f"       WARNING: no valid tool name found in this sentence")
+    if s.upper().startswith("FETCH:"):
+        found = [t for t in valid_tools if t in s]
+        if found:
+            print(f"  ✅ FETCH → tool: {found[0]}")
+        else:
+            print(f"  ❌ FETCH → WARNING: no valid tool name in: {s}")
+    elif s.upper().startswith("COMPUTE:"):
+        sql = s[len("COMPUTE:"):].strip()
+        has_select = "SELECT" in sql.upper()
+        has_fetch = any(f"FETCH_{n}" in sql for n in range(10))
+        status = "✅" if has_select else "⚠️ "
+        fetch_note = "(uses FETCH_N placeholder)" if has_fetch else "(no FETCH_N placeholder — may use hardcoded path?)"
+        print(f"  {status} COMPUTE SQL: {sql[:80]}{'...' if len(sql) > 80 else ''}")
+        print(f"     {fetch_note}")

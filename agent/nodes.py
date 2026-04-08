@@ -1,6 +1,12 @@
 """
 All LangGraph node functions.
 Each node prints its own status line so the terminal shows progress clearly.
+
+Architecture (3 active nodes):
+  reasoning_node  — decomposes question into FETCH/COMPUTE plan; COMPUTE steps embed SQL directly
+  mcp_fetch_node  — calls MCP tool, saves CSV, advances current_idx
+  execution_node  — substitutes FETCH_N placeholders in SQL, executes with DuckDB, advances current_idx
+  synthesize_node — writes final answer from accumulated step results
 """
 
 import os
@@ -88,16 +94,24 @@ def _current_sentence(state: AgentState) -> str:
     return ""
 
 
+def _format_tool_block(name: str, info: dict) -> str:
+    """Format one tool entry for the reasoning prompt (description + CSV fields if available)."""
+    lines = [f"  {name}", f"    -> {info['description']}"]
+    if "fields" in info:
+        lines.append(f"    -> CSV columns: {info['fields']}")
+    return "\n".join(lines)
+
+
 # ─────────────────────────────────────────────
 # NODE 1 — REASONING AGENT
 # ─────────────────────────────────────────────
 def reasoning_node(state: AgentState) -> AgentState:
     _print_step("🧠  REASONING AGENT", "blue")
 
-    # First call: decompose the question
+    # ── First call: build the full FETCH/COMPUTE plan ─────────────────────────
     if not state["logic_sentences"]:
 
-        # ── Stage 1: select the right tools from RAG candidates ──────────────
+        # Stage 1: RAG candidates → gpt-4o-mini selects only needed tools
         console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
 
         candidates = get_relevant_tools(state["question"], top_k=8)
@@ -136,29 +150,37 @@ Output JSON array of selected tool names only:
 
         console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
 
-        # Build a focused tool block from selected names only
+        # Build focused tool block with descriptions + CSV field schemas
         from agent.mcp_catalog import MCP_TOOL_CATALOG
         focused_tools = "\n".join(
-            f"  {t}\n    -> {MCP_TOOL_CATALOG[t]['description']}"
+            _format_tool_block(t, MCP_TOOL_CATALOG[t])
             for t in selected_tools if t in MCP_TOOL_CATALOG
         ) or candidates  # fallback to full candidates if selection fails
 
-        # ── Stage 2: build the FETCH/COMPUTE plan ────────────────────────────
-        console.print("[blue]  → Stage 2: building execution plan...[/]")
+        # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
+        console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
 
         prompt = f"""
-You are a reasoning agent. Decompose this analytics question into an ordered list of logic sentences.
+You are a reasoning agent. Decompose this analytics question into an ordered execution plan.
 
 Rules:
-- Each sentence starts with FETCH: or COMPUTE:
-- FETCH sentences must name the exact MCP tool to call, chosen from the list below
-- COMPUTE sentences describe a calculation on data already saved to temp files — no tool calls
-- FETCH sentences always come before the COMPUTE sentences that depend on them
-- Only add FETCH steps for data you actually need — do not fetch unnecessary tables
-- Keep each sentence short and specific (one action)
+- Each step is either FETCH or COMPUTE
+- FETCH steps: "FETCH: <exact_tool_name> [optional filter description]"
+  * Use the exact tool name from the list below
+  * Mention any filters (e.g. status=SCHEDULED, start_date=6 months ago)
+- COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
+  * Use read_csv_auto('FETCH_N') where N = 0-indexed FETCH step number
+    (FETCH_0 = result of the 1st FETCH, FETCH_1 = result of the 2nd FETCH, etc.)
+  * Use only the column names listed in each tool's "CSV columns"
+  * For JSON array columns, use json_extract(col, '$[*].field') to access items
+  * For dot-notation columns (e.g. conversion_rates.overall), quote them: "conversion_rates.overall"
+  * SELECT only — no INSERT/UPDATE/DELETE
+  * Return a concise, focused result
+- FETCH steps must come before COMPUTE steps that depend on them
+- Only fetch data you actually need
 - Output ONLY a JSON array of strings, nothing else
 
-AVAILABLE MCP TOOLS (use exact tool name in every FETCH sentence):
+AVAILABLE MCP TOOLS:
 {focused_tools}
 
 Question: {state["question"]}
@@ -186,30 +208,55 @@ Output JSON array only:
 
         return {**state, "logic_sentences": sentences, "current_idx": 0}
 
-    # Error recovery: rephrase current sentence
+    # ── Error recovery: rephrase current sentence ─────────────────────────────
     if state["error"] and state["ra_retries"] < 3:
         current = _current_sentence(state)
-        console.print(f"[yellow]  → Rephrasing step {state['current_idx']+1} after error: {state['error'][:80]}[/]")
+        console.print(f"[yellow]  → Fixing step {state['current_idx']+1} after error: {state['error'][:80]}[/]")
 
-        prompt = f"""
-The following logic sentence failed with an error.
-Rephrase it or choose a different MCP tool.
+        if current.upper().startswith("COMPUTE:"):
+            # SQL error — rewrite the SQL
+            file_info = "\n".join(
+                f"  FETCH_{n} = {p}" for n, p in enumerate(state["temp_files"])
+            )
+            prompt = f"""
+The following SQL query failed. Rewrite it to fix the error.
+
+Original COMPUTE step:
+{current}
+
+Error:
+{state["error"]}
+
+Available CSV files (use read_csv_auto(path)):
+{file_info}
+
+Rules:
+- Use only columns that exist in the CSV (check the error for actual column names)
+- Quote dot-notation column names with double quotes (e.g. "conversion_rates.overall")
+- Use json_extract for JSON array columns
+
+Output only the corrected sentence starting with "COMPUTE: SELECT ..." — nothing else.
+""".strip()
+        else:
+            # FETCH error — rephrase or switch tool
+            prompt = f"""
+The following FETCH step failed. Rephrase it or choose a different MCP tool.
 
 Original: {current}
 Error: {state["error"]}
 Already fetched files: {state["temp_files"]}
 
-AVAILABLE MCP TOOLS relevant to this step (use exact tool name):
-{get_relevant_tools(current, top_k=8)}
+AVAILABLE MCP TOOLS relevant to this step:
+{get_relevant_tools(current, top_k=5)}
 
-Output only the rephrased sentence (starting with FETCH: or COMPUTE:):
+Output only the rephrased sentence (starting with FETCH:):
 """.strip()
 
         response = llm.invoke(prompt)
         new_sentence = response.content.strip()
         sentences = state["logic_sentences"].copy()
         sentences[state["current_idx"]] = new_sentence
-        console.print(f"[yellow]  → Rephrased: {new_sentence}[/]")
+        console.print(f"[yellow]  → Rephrased: {new_sentence[:120]}[/]")
 
         return {
             **state,
@@ -244,19 +291,15 @@ Request: {sentence}
     # Execute tool calls
     all_rows = []
     if hasattr(response, "tool_calls") and response.tool_calls:
-        from langchain_core.messages import ToolMessage
-
         for tool_call in response.tool_calls:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
             console.print(f"[green]  → Calling tool: [bold]{tool_name}[/] with {tool_args}[/]")
 
-            # Find and invoke the tool
             tool_fn = next((t for t in tools if t.name == tool_name), None)
             if tool_fn:
                 try:
                     result = tool_fn.invoke(tool_args)
-                    # Parse result into rows
                     if isinstance(result, str):
                         try:
                             data = json.loads(result)
@@ -280,85 +323,42 @@ Request: {sentence}
         console.print("[yellow]  → No tool call made, using LLM response as data[/]")
         all_rows = [{"response": response.content}]
 
-    # Save to temp CSV
-    idx = state["current_idx"]
-    filename = f"{SESSION_DIR}/fetch_{idx}.csv"
+    # Save to temp CSV — named by fetch order (not sentence index)
+    fetch_idx = len(state["temp_files"])
+    filename = f"{SESSION_DIR}/fetch_{fetch_idx}.csv"
     df = pd.json_normalize(all_rows)
     df.to_csv(filename, index=False)
     console.print(f"[green]  → Saved {len(df)} rows → {filename}[/]")
+    console.print(f"[green]  → Columns: {list(df.columns)}[/]")
 
     return {
         **state,
         "temp_files": state["temp_files"] + [filename],
+        "current_idx": state["current_idx"] + 1,
         "error": None,
     }
 
 
 # ─────────────────────────────────────────────
-# NODE 3 — CODING AGENT
-# ─────────────────────────────────────────────
-def coding_node(state: AgentState) -> AgentState:
-    sentence = _current_sentence(state)
-    _print_step(f"✍️   CODING AGENT  [step {state['current_idx']+1}]", "magenta", sentence)
-
-    # RAG: retrieve relevant schema
-    schema_context = get_relevant_schema(sentence, top_k=5)
-    console.print(f"[magenta]  → Retrieved schema context from Chroma[/]")
-
-    # Build file reference string for the prompt
-    file_list = "\n".join(
-        f"  - '{f}'" for f in state["temp_files"]
-    )
-
-    retry_note = ""
-    if state["error"] and state["cod_retries"] > 0:
-        retry_note = f"\n\nPrevious SQL failed with: {state['error']}\nFix the issue."
-
-    prompt = f"""
-You are a SQL coding agent. Write a DuckDB SQL query for this logic:
-
-LOGIC: {sentence}
-
-AVAILABLE CSV FILES (use read_csv_auto() to query them):
-{file_list}
-
-RELEVANT SCHEMA (for column name reference):
-{schema_context}
-
-Rules:
-- Use DuckDB syntax: read_csv_auto('<path>') as the table source
-- SELECT only — no INSERT/UPDATE/DELETE
-- If computing a percentage, return a single numeric result
-- Return ONLY the SQL query, no explanation, no markdown fences
-{retry_note}
-""".strip()
-
-    response = llm.invoke(prompt)
-    sql = response.content.strip()
-
-    # Strip markdown if present
-    if sql.startswith("```"):
-        parts = sql.split("```")
-        sql = parts[1]
-        if sql.startswith("sql"):
-            sql = sql[3:]
-    sql = sql.strip()
-
-    console.print(f"[magenta]  → Generated SQL:[/]")
-    console.print(Panel(sql, style="magenta dim", padding=(0, 2)))
-
-    return {**state, "current_sql": sql}
-
-
-# ─────────────────────────────────────────────
-# NODE 4 — EXECUTION LAYER
+# NODE 3 — EXECUTION LAYER
 # ─────────────────────────────────────────────
 def execution_node(state: AgentState) -> AgentState:
-    _print_step(f"🔧  EXECUTION  [step {state['current_idx']+1}]", "cyan")
+    sentence = _current_sentence(state)
+    _print_step(f"⚙️   EXECUTE  [step {state['current_idx']+1}]", "cyan", sentence)
+
+    # Extract SQL from the COMPUTE sentence
+    sql = sentence[len("COMPUTE:"):].strip()
+
+    # Substitute FETCH_N placeholders with actual file paths
+    for n, path in enumerate(state["temp_files"]):
+        sql = sql.replace(f"FETCH_{n}", path)
+
+    console.print(f"[cyan]  → SQL:[/]")
+    console.print(Panel(sql, style="cyan dim", padding=(0, 2)))
 
     try:
         conn = duckdb.connect()
-        result_df = conn.execute(state["current_sql"]).fetchdf()
+        result_df = conn.execute(sql).fetchdf()
         conn.close()
 
         result_str = result_df.to_string(index=False)
@@ -372,7 +372,6 @@ def execution_node(state: AgentState) -> AgentState:
             ],
             "current_idx": state["current_idx"] + 1,
             "error": None,
-            "cod_retries": 0,
         }
 
     except Exception as e:
@@ -381,12 +380,11 @@ def execution_node(state: AgentState) -> AgentState:
         return {
             **state,
             "error": error_msg,
-            "cod_retries": state["cod_retries"] + 1,
         }
 
 
 # ─────────────────────────────────────────────
-# NODE 5 — SYNTHESIZE
+# NODE 4 — SYNTHESIZE
 # ─────────────────────────────────────────────
 def synthesize_node(state: AgentState) -> AgentState:
     _print_step("💡  SYNTHESIZING FINAL ANSWER", "yellow")
