@@ -9,6 +9,7 @@ Architecture (3 active nodes):
   synthesize_node — writes final answer from accumulated step results
 """
 
+import asyncio
 import os
 import json
 import uuid
@@ -60,7 +61,6 @@ def get_mcp_tools():
     if _mcp_tools is not None:
         return _mcp_tools
 
-    import asyncio
     from langchain_mcp_adapters.client import MultiServerMCPClient
 
     mcp_url = os.getenv("MCP_SERVER_URL", "http://localhost:8787/mcp")
@@ -300,7 +300,7 @@ Request: {sentence}
             tool_fn = next((t for t in tools if t.name == tool_name), None)
             if tool_fn:
                 try:
-                    result = tool_fn.invoke(tool_args)
+                    result = asyncio.run(tool_fn.ainvoke(tool_args))
                     if isinstance(result, str):
                         try:
                             data = json.loads(result)
