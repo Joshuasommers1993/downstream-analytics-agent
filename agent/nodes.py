@@ -52,15 +52,22 @@ llm_mini = ChatOpenAI(
 
 
 # ─────────────────────────────────────────────
-# Single event loop + MCP tools (loaded once)
+# Dedicated async thread + MCP tools (loaded once)
 # ─────────────────────────────────────────────
-_loop = asyncio.new_event_loop()
+# LangGraph runs its own event loop internally, so we isolate all MCP async
+# calls in a background thread with its own persistent event loop.
+import threading
+
+_bg_loop = asyncio.new_event_loop()
+threading.Thread(target=_bg_loop.run_forever, daemon=True).start()
+
 _mcp_tools = None
 
 
 def _run(coro):
-    """Run a coroutine on the shared event loop."""
-    return _loop.run_until_complete(coro)
+    """Submit a coroutine to the background thread's event loop and block until done."""
+    future = asyncio.run_coroutine_threadsafe(coro, _bg_loop)
+    return future.result()
 
 
 def get_mcp_tools():
