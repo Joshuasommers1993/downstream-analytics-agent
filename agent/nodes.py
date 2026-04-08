@@ -60,6 +60,7 @@ def get_mcp_tools():
     if _mcp_tools is not None:
         return _mcp_tools
 
+    import asyncio
     from langchain_mcp_adapters.client import MultiServerMCPClient
 
     mcp_url = os.getenv("MCP_SERVER_URL", "http://localhost:8787/mcp")
@@ -72,7 +73,7 @@ def get_mcp_tools():
             "headers": {"Authorization": f"Bearer {api_key}"},
         }
     })
-    _mcp_tools = client.get_tools()
+    _mcp_tools = asyncio.run(client.get_tools())
     return _mcp_tools
 
 
