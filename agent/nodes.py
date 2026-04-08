@@ -4,12 +4,11 @@ Each node prints its own status line so the terminal shows progress clearly.
 
 Architecture (3 active nodes):
   reasoning_node  — decomposes question into FETCH/COMPUTE plan; COMPUTE steps embed SQL directly
-  mcp_fetch_node  — calls MCP tool, saves CSV, advances current_idx
+  mcp_fetch_node  — calls Downstream API directly, saves CSV, advances current_idx
   execution_node  — substitutes FETCH_N placeholders in SQL, executes with DuckDB, advances current_idx
   synthesize_node — writes final answer from accumulated step results
 """
 
-import asyncio
 import os
 import json
 import uuid
@@ -52,43 +51,38 @@ llm_mini = ChatOpenAI(
 
 
 # ─────────────────────────────────────────────
-# Dedicated async thread + MCP tools (loaded once)
+# Downstream API client (direct HTTP, no MCP)
 # ─────────────────────────────────────────────
-# LangGraph runs its own event loop internally, so we isolate all MCP async
-# calls in a background thread with its own persistent event loop.
-import threading
+import requests
 
-_bg_loop = asyncio.new_event_loop()
-threading.Thread(target=_bg_loop.run_forever, daemon=True).start()
-
-_mcp_tools = None
+_API_BASE  = os.getenv("DOWNSTREAM_API_URL", "https://api.trydownstream.com")
+_API_KEY   = os.getenv("MCP_API_KEY", "")
+_API_HEADERS = {"X-API-KEY": _API_KEY, "Content-Type": "application/json"}
 
 
-def _run(coro):
-    """Submit a coroutine to the background thread's event loop and block until done."""
-    future = asyncio.run_coroutine_threadsafe(coro, _bg_loop)
-    return future.result()
+def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
+    """Fetch all pages from a cursor-paginated Downstream API endpoint."""
+    rows: list[dict] = []
+    query = dict(params or {})
+    query["limit"] = 100
 
+    while True:
+        resp = requests.get(f"{_API_BASE}{path}", headers=_API_HEADERS, params=query, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
 
-def get_mcp_tools():
-    global _mcp_tools
-    if _mcp_tools is not None:
-        return _mcp_tools
+        if isinstance(data, list):
+            rows.extend(data)
+            break
 
-    from langchain_mcp_adapters.client import MultiServerMCPClient
+        page = data.get("data", data.get("results", []))
+        rows.extend(page)
 
-    mcp_url = os.getenv("MCP_SERVER_URL", "http://localhost:8787/mcp")
-    api_key = os.getenv("MCP_API_KEY", "")
+        if not data.get("has_more") or not page:
+            break
+        query["starting_after"] = page[-1]["id"]
 
-    client = MultiServerMCPClient({
-        "downstream": {
-            "url": mcp_url,
-            "transport": "streamable_http",
-            "headers": {"Authorization": f"Bearer {api_key}"},
-        }
-    })
-    _mcp_tools = _run(client.get_tools())
-    return _mcp_tools
+    return rows
 
 
 # ─────────────────────────────────────────────
@@ -284,45 +278,28 @@ Output only the rephrased sentence (starting with FETCH:):
 
 
 # ─────────────────────────────────────────────
-# NODE 2 — MCP FETCH
+# NODE 2 — FETCH
 # ─────────────────────────────────────────────
 def mcp_fetch_node(state: AgentState) -> AgentState:
     sentence = _current_sentence(state)
-    _print_step(f"🔌  MCP FETCH  [step {state['current_idx']+1}]", "green", sentence)
+    _print_step(f"📥  FETCH  [step {state['current_idx']+1}]", "green", sentence)
 
-    # Extract tool name directly from the sentence — no LLM needed
-    # Format: "FETCH: <tool_name> [optional filter description]"
-    after_fetch = sentence[len("FETCH:"):].strip()
-    tool_name = after_fetch.split()[0]
+    # Extract tool name from "FETCH: <tool_name> [optional description]"
+    tool_name = sentence[len("FETCH:"):].strip().split()[0]
 
-    tools = get_mcp_tools()
-    tool_fn = next((t for t in tools if t.name == tool_name), None)
+    from agent.mcp_catalog import MCP_TOOL_CATALOG
+    tool_info = MCP_TOOL_CATALOG.get(tool_name)
+    if not tool_info:
+        return {**state, "error": f"Unknown tool: {tool_name}"}
 
-    if tool_fn is None:
-        return {**state, "error": f"Tool not found: {tool_name}"}
-
-    console.print(f"[green]  → Calling tool: [bold]{tool_name}[/][/]")
+    path = tool_info["path"]
+    console.print(f"[green]  → GET {_API_BASE}{path}[/]")
 
     try:
-        result = _run(tool_fn.ainvoke({}))
-        if isinstance(result, str):
-            try:
-                data = json.loads(result)
-            except Exception:
-                data = result
-        else:
-            data = result
-
-        if isinstance(data, dict):
-            rows = data.get("results", data.get("data", [data]))
-        elif isinstance(data, list):
-            rows = data
-        else:
-            rows = [{"result": str(data)}]
+        all_rows = fetch_all_pages(path)
     except Exception as e:
-        return {**state, "error": f"MCP tool error: {e}"}
+        return {**state, "error": f"API fetch error ({path}): {e}"}
 
-    all_rows = rows
     console.print(f"[green]  → Got {len(all_rows)} rows[/]")
 
     # Save to temp CSV — named by fetch order (not sentence index)
