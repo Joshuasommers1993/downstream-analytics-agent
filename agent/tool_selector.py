@@ -25,27 +25,44 @@ _MCP_SUFFIX = re.compile(r"_mcp_\w+$")
 
 def get_relevant_tools(question: str, top_k: int = 8) -> str:
     """
-    Ask the tool-selector agent which MCP tools to call for this question.
-    Returns a formatted string: tool_name + description, same shape as the
-    old Chroma RAG output so the Reasoning Agent prompt is unchanged.
+    Combine downstream agent tool selection with Chroma RAG.
+    - Agent provides domain-aware primary tools
+    - RAG fills in related/supporting tools the agent may miss
+    Returns a formatted string: tool_name + description.
     """
     from agent.mcp_catalog import MCP_TOOL_CATALOG
+    from agent.schema_rag import get_relevant_tools as rag_get
 
-    tool_names = _ask_agent(question)
+    agent_names = _ask_agent(question)
+    rag_result = rag_get(question, top_k=top_k)
 
-    # Fallback to Chroma RAG if agent returned nothing
-    if not tool_names:
-        from agent.schema_rag import get_relevant_tools as rag_fallback
-        return rag_fallback(question, top_k=top_k)
+    # Parse RAG tool names from its formatted output
+    rag_names = [
+        line.strip()
+        for line in rag_result.splitlines()
+        if line.strip() and not line.strip().startswith("->")
+    ]
+
+    # Merge: agent first, then RAG additions, deduplicated, capped at top_k
+    seen = set()
+    merged = []
+    for name in agent_names + rag_names:
+        if name not in seen and name in MCP_TOOL_CATALOG:
+            seen.add(name)
+            merged.append(name)
+        if len(merged) >= top_k:
+            break
+
+    if not merged:
+        return rag_result  # full fallback
 
     lines = []
-    for name in tool_names[:top_k]:
-        if name in MCP_TOOL_CATALOG:
-            desc = MCP_TOOL_CATALOG[name]["description"]
-            lines.append(f"  {name}\n    -> {desc}")
-        else:
-            # Include even if not in catalog so the agent is aware
-            lines.append(f"  {name}\n    -> (no description available)")
+    for name in merged:
+        desc = MCP_TOOL_CATALOG[name]["description"]
+        fields = MCP_TOOL_CATALOG[name].get("fields", "")
+        lines.append(f"  {name}\n    -> {desc}")
+        if fields:
+            lines.append(f"    -> CSV columns: {fields}")
 
     return "\n".join(lines)
 
@@ -57,12 +74,7 @@ def _ask_agent(question: str) -> list[str]:
     Strips the '_mcp_*' suffix the agent appends (e.g. '_mcp_User').
     Returns an empty list on any error.
     """
-    prompt = (
-        "Without calling or executing any tools, list the MCP tool names that "
-        "would provide the raw data to answer this question. "
-        "Reply with tool names only, one per line:\n"
-        f"{question}"
-    )
+    prompt = question
 
     try:
         response = httpx.post(
@@ -79,14 +91,14 @@ def _ask_agent(question: str) -> list[str]:
             timeout=30,
         )
         response.raise_for_status()
-        content = response.json()["choices"][0]["message"].get("content") or ""
+        message = response.json()["choices"][0]["message"]
 
         names = []
-        for line in content.splitlines():
-            line = line.strip()
-            if not line or line.lower() == "none":
-                continue
-            clean = _MCP_SUFFIX.sub("", line)
+
+        # Primary: extract tool names from tool_calls (agent actually chose these)
+        for tc in message.get("tool_calls") or []:
+            fn_name = tc.get("function", {}).get("name", "")
+            clean = _MCP_SUFFIX.sub("", fn_name)
             if clean:
                 names.append(clean)
 
