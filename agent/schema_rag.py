@@ -78,7 +78,7 @@ def build_tools_index():
         text = f"Tool: {tool_name}\nPath: {info['path']}\nDescription: {info['description']}"
         docs.append(text)
         ids.append(tool_name)
-        metas.append({"tool": tool_name, "path": info["path"]})
+        metas.append({"tool": tool_name, "path": info["path"] or ""})
 
     if docs:
         collection.add(documents=docs, ids=ids, metadatas=metas)

@@ -6,40 +6,6 @@ MCP_TOOL_CATALOG = {
 
     # ── ENRICHMENT ────────────────────────────────────────────────────────────
 
-    "api_enrichment_phone_reveal_account_usage_get": {
-        "path": "/api/enrichment/phone-reveal/account-usage/{user_group_id}/",
-        "description": (
-            "Returns the phone-reveal usage count for a specific user group (account) against its monthly cap. "
-            "Fields: reveals_used, reveals_cap, user_group_id. "
-            "Use this to check how many phone numbers have been revealed for a given account and whether the quota is exhausted."
-        ),
-        "fields": "reveals_used (int), reveals_cap (int), user_group_id (int)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_enrichment_phone_reveal_quota_list": {
-        "path": "/api/enrichment/phone-reveal/quota/",
-        "description": (
-            "Returns the current monthly phone-reveal quota status for the authenticated org. "
-            "Fields: quota_used, quota_total, quota_remaining, reset_date. "
-            "Use this to check org-wide phone reveal limits and remaining capacity."
-        ),
-    
-        "fields": "quota_used (int), quota_total (int), quota_remaining (int), reset_date (date)",
-        "method": "GET",
-    },
-    "api_enrichment_user_groups_suggested_coworkers_list": {
-        "path": "/api/enrichment/user-groups/{user_group_id}/suggested-coworkers/",
-        "description": (
-            "Returns Apollo-sourced people at the same company domain as the given user group, suitable for invite suggestions. "
-            "Fields: first_name, last_name, email, title, linkedin_url. "
-            "Use this to find potential new users to invite to an account based on company email domain."
-        ),
-        "fields": "first_name (str), last_name (str), email (str), title (str), linkedin_url (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
-
     # ── INSIGHT HUB (pre-computed sales analytics) ────────────────────────────
 
     "api_insight_hub_account_classification_list": {
@@ -53,11 +19,7 @@ MCP_TOOL_CATALOG = {
             "Use this for revenue attainment vs target, new vs returning customer revenue split, pipeline value, "
             "monthly GMV trend, or sales territory performance."
         ),
-        "fields": (
-            "net_new_gmv (float), expansion_gmv (float), backlog_gmv (float), total_gmv (float), "
-            "net_new_accounts (int), expansion_accounts (int), backlog_orders (int), "
-            "monthly_trend (JSON str: [{month (YYYY-MM), gmv}])"
-        ),
+        "fields": "month (str), gmv (float)",
         "method": "GET",
     },
     "api_insight_hub_account_growth_list": {
@@ -71,12 +33,7 @@ MCP_TOOL_CATALOG = {
             "Use this for customer acquisition rate, churn rate, net customer growth, retention analysis, "
             "or to identify which specific accounts were won or lost in a period."
         ),
-        "fields": (
-            "net_new (int), churned (int), retained (int), net_growth (int), "
-            "net_new_accounts (JSON str: [{id, name, first_order_date}]), "
-            "churned_accounts (JSON str: [{id, name, last_order_date}]), "
-            "monthly_trend (JSON str: [{month (YYYY-MM), net_new}])"
-        ),
+        "fields": "id (str), name (str), first_order_date (str), last_order_date (str)",
         "method": "GET",
     },
     "api_insight_hub_commissions_list": {
@@ -90,14 +47,7 @@ MCP_TOOL_CATALOG = {
             "Use this for sales rep compensation analysis, commission payout totals, "
             "or to see how much GMV is in-cart vs scheduled vs already completed for commission purposes."
         ),
-        "fields": (
-            "commission_rate_percent (float), "
-            "summary.total_commission_eligible (float), summary.total_commission (float), "
-            "summary.total_in_cart (float), summary.total_scheduled (float), "
-            "reps (JSON str: [{rep_id, rep_name, commission_eligible, commission, in_cart, scheduled}]), "
-            "monthly_trend (JSON str: [{month, total_commission}])"
-        ),
-        "method": "GET",
+        "fields": "rep_id (str), rep_name (str), commission_eligible (float), commission (float), in_cart (float), scheduled (float)",
     },
     "api_insight_hub_customer_spend_mom_list": {
         "path": "/api/insight-hub/customer-spend-mom/",
@@ -110,7 +60,7 @@ MCP_TOOL_CATALOG = {
             "spend concentration (which customers drive most revenue), "
             "or to identify accounts with declining or growing spend over time."
         ),
-        "fields": "user_group_id (int), user_group_name (str), month (str YYYY-MM), spend (float)",
+        "fields": "user_group_id (str), user_group_name (str), month (str), spend (float)",
         "method": "GET",
     },
     "api_insight_hub_first_touch_to_order_list": {
@@ -135,7 +85,7 @@ MCP_TOOL_CATALOG = {
             "Use this for geographic revenue distribution, top states by GMV, "
             "state-level market penetration, or regional sales comparison."
         ),
-        "fields": "state (str, two-letter code), gmv (float), order_count (int)",
+        "fields": "state (str), gmv (float), order_count (int)",
         "method": "GET",
     },
     "api_insight_hub_gmv_mom_list": {
@@ -149,7 +99,7 @@ MCP_TOOL_CATALOG = {
             "Use this for revenue trends, platform margin trends, average order value trends, "
             "order volume trends, or MoM growth rate calculations."
         ),
-        "fields": "month (str YYYY-MM), gmv (float), supplier_cost (float), net_revenue (float), take_rate_percent (float), aov (float), order_count (int)",
+        "fields": "month (str), gmv (float), supplier_cost (float), net_revenue (float), take_rate_percent (float), aov (float), order_count (int)",
         "method": "GET",
     },
     "api_insight_hub_product_mix_list": {
@@ -161,7 +111,7 @@ MCP_TOOL_CATALOG = {
             "Pre-computed: category name, order_count, percent of total orders, total_orders. "
             "Filters: start_date, end_date."
         ),
-        "fields": "name (str), order_count (int), percent (float), total_orders (int)",
+        "fields": "category (str), order_count (int), percent (float)",
         "method": "GET",
     },
     "api_insight_hub_quota_vs_actual_list": {
@@ -175,7 +125,7 @@ MCP_TOOL_CATALOG = {
             "Use this for sales rep performance review, quota attainment ranking, "
             "which reps are hitting or missing targets, or team-level attainment rollup."
         ),
-        "fields": "rep_id (int), rep_name (str), month (str YYYY-MM), gmv_target (float), gmv_actual (float), attainment_percent (float), new_accounts_target (int), new_accounts_actual (int), orders_target (int), orders_actual (int)",
+        "fields": "rep_id (str), rep_name (str), month (str), gmv_target (float), gmv_actual (float), attainment_percent (float), new_accounts_target (int), new_accounts_actual (int), orders_target (int), orders_actual (int)",
         "method": "GET",
     },
     "api_insight_hub_quotas_list": {
@@ -187,7 +137,7 @@ MCP_TOOL_CATALOG = {
             "or verify quota coverage across the team."
         ),
     
-        "fields": "id (int), rep_id (int), month (str YYYY-MM), gmv_target (float), new_accounts_target (int), orders_target (int)",
+        "fields": "id (int), rep_id (str), month (str), gmv_target (float), new_accounts_target (int), orders_target (int)",
         "method": "GET",
     },
     "api_insight_hub_sales_funnel_list": {
@@ -199,11 +149,7 @@ MCP_TOOL_CATALOG = {
             "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
             "Filters: start_date, end_date."
         ),
-        "fields": (
-            "stages (JSON str: [{stage, count, gmv}]), "
-            "conversion_rates.cart_to_quote (float), conversion_rates.quote_to_close (float), conversion_rates.overall (float)"
-        ),
-        "method": "GET",
+        "fields": "stage (str), count (int), gmv (float)",
     },
     "api_insight_hub_spend_by_product_list": {
         "path": "/api/insight-hub/spend-by-product/",
@@ -227,7 +173,7 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier concentration analysis, top sellers by GMV, "
             "how much spend goes to each vendor, or supplier diversification metrics."
         ),
-        "fields": "seller_id (int), seller_name (str), gmv (float)",
+        "fields": "seller_id (str), seller_name (str), gmv (float)",
         "method": "GET",
     },
     "api_insight_hub_take_rate_mom_list": {
@@ -239,7 +185,7 @@ MCP_TOOL_CATALOG = {
             "seller_total (supplier cost), net_revenue, take_rate_percent. "
             "Filters: start_date, end_date, rep_id."
         ),
-        "fields": "rep_id (int), rep_name (str), month (str YYYY-MM), customer_total (float), seller_total (float), net_revenue (float), take_rate_percent (float)",
+        "fields": "rep_id (str), rep_name (str), month (str), customer_total (float), seller_total (float), net_revenue (float), take_rate_percent (float)",
         "method": "GET",
     },
 
@@ -257,17 +203,6 @@ MCP_TOOL_CATALOG = {
         "fields": "id (int), type (str: email/call/note), subject (str), body (str), created_by (str), created_on (datetime)",
         "method": "GET",
     },
-    "api_v1_admin_internal_hierarchy_org_chart_list": {
-        "path": "/api/v1/admin/internal-hierarchy/org-chart/",
-        "description": (
-            "Admin-only. Returns the canonical Downstream internal org chart: teams, managers, and rep assignments. "
-            "Use this to look up team structure, find which rep belongs to which team, "
-            "or identify reporting relationships."
-        ),
-    
-        "fields": "team_id (int), team_name (str), manager_id (int), manager_name (str), reps (JSON str: [{rep_id, rep_name}])",
-        "method": "GET",
-    },
     "api_v1_admin_sales_target_vs_actuals_list": {
         "path": "/api/v1/admin/sales/target-vs-actuals/",
         "description": (
@@ -277,7 +212,7 @@ MCP_TOOL_CATALOG = {
             "or current month vs prior month performance."
         ),
     
-        "fields": "date (date), actual_gmv (float), target_gmv (float), prior_month_gmv (float), cumulative_actual (float), cumulative_target (float)",
+        "fields": "period.month (str), period.as_of (str), period.current_month_start (str), period.current_month_end (str), period.previous_month_start (str), period.previous_month_end (str), period.days_elapsed (int), gmv.target (float), gmv.actual_mtd (float), gmv.previous_month_mtd_aligned (float), gmv.delta_vs_previous_month_mtd (float), gmv.delta_vs_previous_month_mtd_percent (float), gmv.expected_to_date (float), gmv.attainment_percent (float), gmv.projected_month_end (float), gmv.on_track (bool), gmv.booked_month_total (float), gmv.future_booked_this_month (float), daily_progress.actual_complete_cumulative (JSON), daily_progress.booked_total_cumulative (JSON), daily_progress.expected_pace_cumulative (JSON), daily_progress.previous_month_cumulative_aligned (JSON), definitions.actual_mtd (str), definitions.booked_month_total (str), definitions.future_booked_this_month (str), definitions.actual_complete_cumulative_basis (str), definitions.booked_total_cumulative_basis (str), definitions.expected_pace_cumulative_basis (str)",
         "method": "GET",
     },
     "api_v1_admin_transactional_emails_list": {
@@ -310,31 +245,8 @@ MCP_TOOL_CATALOG = {
             "Use this for platform-wide goal attainment rollup or pipeline health overview."
         ),
     
-        "fields": "total_target_gmv (float), total_actual_gmv (float), attainment_percent (float), account_count (int)",
+        "fields": "period.as_of (str), period.current_month_start (str), period.previous_month_start (str), gmv.goal (float), gmv.current (float), gmv.previous_month (float), gmv.gap (float), gmv.attainment_percent (float), users.goal (int), users.current (int), users.gap (int), users.attainment_percent (float), job_site_starts.goal (int), job_site_starts.current (int), job_site_starts.gap (int), job_site_starts.attainment_percent (float), project_start_funnel.target_monthly_project_starts (int), project_start_funnel.expected_to_date (int), project_start_funnel.month_start (str), project_start_funnel.month_end (str), project_start_funnel.as_of (str), project_start_funnel.addresses_starting_this_month (int), project_start_funnel.due_by_now (int), project_start_funnel.later_this_month (int), project_start_funnel.due_by_now_with_populated_cart (int), project_start_funnel.due_by_now_with_checked_out_cart (int), project_start_funnel.due_by_now_added_to_cart_pct (float), project_start_funnel.due_by_now_cart_to_checkout_pct (float), project_start_funnel.due_by_now_added_to_checkout_pct (float)",
         "method": "GET",
-    },
-    "api_v1_admin_user_groups_spend_potential_list": {
-        "path": "/api/v1/admin/user-groups/spend-potential/",
-        "description": (
-            "Admin-only. Returns advisory monthly spend-potential estimates for all user groups. "
-            "Uses conservative product-fit heuristics and recent order history to estimate how much each account could spend. "
-            "Fields: user_group_id, user_group_name, estimated_monthly_spend, confidence. "
-            "Use this for account prioritization, TAM estimation per account, or whitespace analysis."
-        ),
-    
-        "fields": "user_group_id (int), user_group_name (str), estimated_monthly_spend (float), confidence (str)",
-        "method": "GET",
-    },
-    "api_v1_admin_user_groups_enrichment_list": {
-        "path": "/api/v1/admin/user-groups/{user_group_id}/enrichment/",
-        "description": (
-            "Admin-only. Returns enrichment data stored for a user group from third-party providers (Apollo, Clearbit, etc.). "
-            "Includes company size, employee count, industry, revenue range, LinkedIn URL, and raw provider payloads. "
-            "Use this to look up firmographic data for an account."
-        ),
-        "fields": "company_size (str), employee_count (int), industry (str), revenue_range (str), linkedin_url (str)",
-        "method": "GET",
-        "requires_id": True,
     },
     "api_v1_admin_user_groups_goal_progress_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/goal-progress/",
@@ -358,17 +270,6 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
         "requires_id": True,
     },
-    "api_v1_admin_user_groups_sales_state_list": {
-        "path": "/api/v1/admin/user-groups/{user_group_id}/sales-state/",
-        "description": (
-            "Admin-only. Returns the current manual sales status and derived lifecycle metadata for an account: "
-            "sales_state (prospect/active/churned/etc.), days_since_last_order, lifecycle_stage. "
-            "Use this to check the CRM status of a customer or identify accounts at risk."
-        ),
-        "fields": "sales_state (str), days_since_last_order (int), lifecycle_stage (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── ADVERTISEMENTS ────────────────────────────────────────────────────────
 
@@ -381,7 +282,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list active promotions, see which sellers are advertising, or audit ad inventory."
         ),
     
-        "fields": "id (int), title (str), image_url (str), target_url (str), placement (str), is_active (bool), start_date (date), end_date (date)",
+        "fields": "id (str), text (str), image (str), background_color (str), text_color (str), object_type (str), object_id (str), sort (int), is_active (bool), start_date (str), end_date (str)",
         "method": "GET",
     },
     "api_v1_advertisements_get": {
@@ -398,28 +299,6 @@ MCP_TOOL_CATALOG = {
 
     # ── BRANDS ────────────────────────────────────────────────────────────────
 
-    "api_v1_brands_list": {
-        "path": "/api/v1/brands/",
-        "description": (
-            "Returns all product brands in the catalog. Supports name search. "
-            "Fields: id, name, slug, logo_url. "
-            "Use this to list brands, search for a specific brand, or get brand IDs for filtering products."
-        ),
-    
-        "fields": "id (int), name (str), slug (str), logo_url (str)",
-        "method": "GET",
-    },
-    "api_v1_brands_get": {
-        "path": "/api/v1/brands/{id}/",
-        "description": (
-            "Returns a single brand by ID. "
-            "Fields: id, name, slug, logo_url. "
-        ),
-        "fields": "id (int), name (str), slug (str), logo_url (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
-
     # ── DAY OF WEEKS ──────────────────────────────────────────────────────────
 
     "api_v1_day_of_weeks_list": {
@@ -430,7 +309,7 @@ MCP_TOOL_CATALOG = {
             "Use this to get the UUID for a day name when setting or querying open hours."
         ),
     
-        "fields": "id (int), name (str: MONDAY/TUESDAY/WEDNESDAY/THURSDAY/FRIDAY/SATURDAY/SUNDAY)",
+        "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), number (int), created_by (str), updated_by (str)",
         "method": "GET",
     },
     "api_v1_day_of_weeks_get": {
@@ -457,26 +336,6 @@ MCP_TOOL_CATALOG = {
 
     # ── GROUP INVOICES ────────────────────────────────────────────────────────
 
-    "api_v1_group_invoices_list": {
-        "path": "/api/v1/group_invoices/",
-        "description": (
-            "Returns grouped invoices (consolidated billing statements) visible to the authenticated customer context. "
-            "A GroupInvoice bundles multiple individual invoices into one statement. "
-            "Fields: id, user_group, total, status, invoice_count, due_date, created_on. "
-            "Use this for account-level billing summaries or consolidated payment tracking."
-        ),
-    
-        "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
-        "method": "GET",
-    },
-    "api_v1_group_invoices_get": {
-        "path": "/api/v1/group_invoices/{id}/",
-        "description": "Returns a single grouped invoice by ID with its constituent invoices.",
-        "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-
     # ── IDENTITY VERIFICATION ─────────────────────────────────────────────────
 
     "api_v1_identity_verification_list": {
@@ -487,7 +346,7 @@ MCP_TOOL_CATALOG = {
             "Use this to check if an account has completed KYC/identity verification."
         ),
     
-        "fields": "status (str), verified_at (datetime), provider (str)",
+        "fields": "id (str), object (str), client_reference_id (str), client_secret (str), created (int), last_error (str), last_verification_report (str), livemode (bool), redaction (str), related_customer (str), related_customer_account (str), status (str), type (str), url (str), ephemeral_key (str), publishable_key (str), metadata.user_id (str)",
         "method": "GET",
     },
 
@@ -502,7 +361,7 @@ MCP_TOOL_CATALOG = {
             "Use this to get industry IDs for filtering accounts, or to list all supported industries."
         ),
     
-        "fields": "id (int), name (str), slug (str), sort_order (int)",
+        "fields": "id (str), main_product_categories (JSON), name (str), description (str), image (str), slug (str), sort (int)",
         "method": "GET",
     },
     "api_v1_industries_get": {
@@ -539,7 +398,7 @@ MCP_TOOL_CATALOG = {
             "Use this to check insurance compliance, find expired policies, or count accounts with valid coverage."
         ),
     
-        "fields": "id (int), account_type (str: seller/buyer), type (str), status (str: valid/expired/pending), effective_date (date), expiration_date (date), insurer (str), coverage_amount (float)",
+        "fields": "id (str), object (str), account (str), account_type (str), type (str), status (str), effective_at (int), expires_at (int), insurance_provider (str), policy_number (str), is_valid (bool), invalid_reasons (JSON), deactivated_at (str), deactivation_reason (str), created (int), coverage.each_occurrence_limit (float), coverage.general_aggregate_limit (float), coverage.additional_insured (bool), coverage.waiver_of_subrogation (bool), document.file_url (str), document.ocr_status (str), coverage.equipment_coverage_limit (float)",
         "method": "GET",
     },
     "api_v1_insurance_policies_get": {
@@ -564,7 +423,7 @@ MCP_TOOL_CATALOG = {
             "Use this for invoice aging analysis, outstanding balance tracking, payment collection metrics, "
             "or to list unpaid invoices for an account."
         ),
-        "fields": "id (int), number (str), status (str: open/paid/void/past_due), total (float), amount_due (float), amount_paid (float), amount_remaining (float), due_date (date), created_on (datetime), user_group_id (int)",
+        "fields": "id (str), object (str), created (int), updated (int), user_address (str), display_total (float), has_outstanding_payment (bool), items (JSON), groups (JSON), pre_payment_credit (str), post_payment_credit (str), order (str), main_product (str), product_add_ons (JSON), refunds (JSON), payment_info (str), created_on (str), updated_on (str), is_deleted (bool), invoice_id (str), amount_due (float), amount_paid (float), amount_remaining (float), due_date (str), hosted_invoice_url (str), invoice_pdf (str), pdf (str), number (str), paid (bool), status (str), total (float), check_sent_at (str), created_by (str), updated_by (str), group_invoice (str)",
         "method": "GET",
     },
     "api_v1_invoices_metrics_list": {
@@ -574,7 +433,7 @@ MCP_TOOL_CATALOG = {
             "past_due_total (overdue amount), outstanding_total (open unpaid), paid_total (collected). "
             "Use this for AR summary, total outstanding balance, or collections health at a glance."
         ),
-        "fields": "past_due_total (float), outstanding_total (float), paid_total (float)",
+        "fields": "past_due (float), outstanding (float), paid (float)",
         "method": "GET",
     },
     "api_v1_invoices_get": {
@@ -586,18 +445,6 @@ MCP_TOOL_CATALOG = {
     },
 
     # ── KNOWLEDGE ─────────────────────────────────────────────────────────────
-
-    "api_v1_knowledge_list": {
-        "path": "/api/v1/knowledge/",
-        "description": (
-            "Returns the list of knowledge documents (help articles, internal docs) in the Downstream knowledge base. "
-            "Fields: id, slug, title, visibility (public/internal), created_on. "
-            "Use this to browse available documentation."
-        ),
-    
-        "fields": "id (int), slug (str), title (str), visibility (str: public/internal), created_on (datetime)",
-        "method": "GET",
-    },
     "api_v1_knowledge_search_list": {
         "path": "/api/v1/knowledge/search/",
         "description": (
@@ -612,37 +459,8 @@ MCP_TOOL_CATALOG = {
         "fields": "document_id (int), slug (str), heading (str), score (float), excerpt (str)",
         "method": "POST",
     },
-    "api_v1_knowledge_get": {
-        "path": "/api/v1/knowledge/{knowledge_document_id}/",
-        "description": "Returns a single knowledge document by ID, including full content.",
-        "fields": "id (int), slug (str), title (str), content (str), visibility (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── LEADS ─────────────────────────────────────────────────────────────────
-
-    "api_v1_leads_list_list": {
-        "path": "/api/v1/leads/list/",
-        "description": (
-            "Admin-only. Returns inbound leads captured from the platform. "
-            "Fields: id, email, name, company, phone, source, created_on, status. "
-            "Use this to list new leads, track lead volume by source, or audit CRM intake."
-        ),
-    
-        "fields": "id (int), email (str), name (str), company (str), phone (str), source (str), status (str), created_on (datetime)",
-        "method": "GET",
-    },
-    "api_v1_leads_meta_webhook_list": {
-        "path": "/api/v1/leads/meta/webhook/",
-        "description": (
-            "Webhook verification endpoint for Meta (Facebook/Instagram) lead forms. "
-            "Not useful for analytics — used for integration setup only."
-        ),
-    
-        "fields": "hub.mode (str), hub.challenge (str), hub.verify_token (str)",
-        "method": "GET",
-    },
 
     # ── MAIN PRODUCTS ─────────────────────────────────────────────────────────
 
@@ -656,7 +474,7 @@ MCP_TOOL_CATALOG = {
             "or understand the product taxonomy."
         ),
     
-        "fields": "id (int), name (str), slug (str), sort (int), popularity (int)",
+        "fields": "id (str), industry (JSON), created_on (str), updated_on (str), is_deleted (bool), name (str), description (str), image (str), icon (str), popularity (float), slug (str), sort (int), main_product_category_code (str), created_by (str), updated_by (str), group (str)",
         "method": "GET",
     },
     "api_v1_main_product_categories_get": {
@@ -676,7 +494,7 @@ MCP_TOOL_CATALOG = {
             "Use this for top-level product taxonomy, marketplace navigation, or filtering available services."
         ),
     
-        "fields": "id (int), name (str), slug (str), sort (int), main_product_categories (JSON str: [{id, name, slug}])",
+        "fields": "id (str), main_product_categories (JSON), created_on (str), updated_on (str), is_deleted (bool), name (str), sort (int), icon (str), slug (str), created_by (str), updated_by (str)",
         "method": "GET",
     },
     "api_v1_main_product_category_groups_get": {
@@ -696,7 +514,7 @@ MCP_TOOL_CATALOG = {
             "find which products are available, or map product names to IDs."
         ),
     
-        "fields": "id (int), name (str), slug (str), main_product_category_id (int), allows_pick_up (bool)",
+        "fields": "id (str), main_product_category (str), main_product_infos (JSON), images (JSON), add_ons (JSON), tags (JSON), listings_count (int), likes_count (int), main_product_waste_types (JSON), products (JSON), related_products (JSON), created_on (str), updated_on (str), is_deleted (bool), name (str), ar_url (str), description (str), image_del (str), slug (str), sort (int), popularity (float), default_take_rate (float), dynamic_max_take_rate (float), minimum_take_rate (float), dynamic_min_take_rate (float), minimum_take_rate_hour (str), minimum_take_rate_day (str), minimum_take_rate_week (str), minimum_take_rate_two_weeks (str), minimum_take_rate_month (str), included_tonnage_quantity (float), max_tonnage_quantity (float), main_product_code (str), has_rental (bool), has_rental_one_step (bool), has_rental_multi_step (bool), has_service (bool), has_service_times_per_week (bool), has_material (bool), allows_pick_up (bool), has_bundled_qty (bool), has_winterization (bool), can_bundle_freight (bool), texas_surcharge_applies (bool), has_rpp (bool), estimated_replacement_value (str), is_related (bool), created_by (str), updated_by (str)",
         "method": "GET",
     },
     "api_v1_main_products_get": {
@@ -717,7 +535,7 @@ MCP_TOOL_CATALOG = {
             "Not suitable for analytics — use order endpoints for raw data."
         ),
     
-        "fields": "active_orders_count (int), upcoming_deliveries_count (int)",
+        "fields": "cart_count (int), active_bookings (int), past_due_invoices (int), last_order (str)",
         "method": "GET",
     },
 
@@ -731,7 +549,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list documents or files attached to a booking."
         ),
     
-        "fields": "id (int), order_group_id (int), file_url (str), filename (str), uploaded_by (str), created_on (datetime)",
+        "fields": "id (str), order_group (str), file_name (str), file_type (str)",
         "method": "GET",
     },
     "api_v1_order_groups_list": {
@@ -747,7 +565,7 @@ MCP_TOOL_CATALOG = {
             "find bookings by job site, or calculate total booking value."
         ),
     
-        "fields": "id (int), status (str), start_date (date), end_date (date), created_on (datetime), total_value (float), order_count (int), user_address_id (int), seller_id (int)",
+        "fields": "id (str), user (str), on_site_contact (str), user_address (str), seller_product_seller_location (str), main_product (str), waste_type (str), time_slot (str), service_recurring_frequency (str), preferred_service_days (JSON), service (float), rental (float), material (float), orders (JSON), active (bool), created_on (str), updated_on (str), is_deleted (bool), access_details (str), placement_details (str), delivered_to_street (bool), start_date (str), end_date (str), estimated_end_date (str), take_rate (float), tonnage_quantity (float), times_per_week (float), shift_count (float), is_delivery (bool), delivery_fee (float), removal_fee (float), created_by (str), updated_by (str), conversation (str), status (str), attachments (JSON), code (str), agreement (str), agreement_signed_by (str), agreement_signed_on (str), asset (str), service.id (str), service.order_group (str), service.created_on (str), service.updated_on (str), service.is_deleted (str), service.price_per_mile (float), service.flat_rate_price (float), service.rate (float), service.miles (float), service.created_by (float), service.updated_by (float), rental.id (str), rental.order_group (str), rental.created_on (str), rental.updated_on (str), rental.is_deleted (str), rental.included_days (float), rental.price_per_day_included (float), rental.price_per_day_additional (float), rental.created_by (float), rental.updated_by (float), material.id (str), material.order_group (str), material.created_on (str), material.updated_on (str), material.is_deleted (str), material.price_per_ton (float), material.tonnage_included (float), material.created_by (float), material.updated_by (float)",
         "method": "GET",
     },
     "api_v1_order_groups_filter_options_list": {
@@ -758,7 +576,7 @@ MCP_TOOL_CATALOG = {
             "Use this to populate filter dropdowns for booking lists."
         ),
     
-        "fields": "statuses (JSON str: [str]), sellers (JSON str: [{id, name}]), products (JSON str: [{id, name}])",
+        "fields": "value (str), label (str), count (int)",
         "method": "GET",
     },
     "api_v1_order_groups_get": {
@@ -801,7 +619,7 @@ MCP_TOOL_CATALOG = {
             "Use this only from the supplier side to see their own delivery schedule or incoming order queue."
         ),
     
-        "fields": "id (int), status (str), start_date (date), end_date (date), product (str), customer_name (str), seller_location_id (int), price (float), created_on (datetime)",
+        "fields": "id (str), created_on (str), updated_on (str), code (str), start_date (str), end_date (str), submitted_on (str), accepted_on (str), completed_on (str), status (str), order_type (str), schedule_window (str), sent_auto_renewal_message (bool), disposal_location (str), order_group (str), main_product (str), seller (str), account_owner (str), submitted_by (str), created_by (str), price (float)",
         "method": "GET",
     },
     "api_v1_orders_for_seller_get": {
@@ -824,7 +642,7 @@ MCP_TOOL_CATALOG = {
             "order_group_id, user_address_id, seller_location_id, product, price, customer_total, seller_total. "
             "Filters: status, order_group_id, user_address_id. Filter by created_on for date-range counts."
         ),
-        "fields": "id (int), status (str: SCHEDULED/COMPLETE/CANCELLED/PENDING/DENIED), created_on (datetime), start_date (date), end_date (date), customer_total (float), seller_total (float), order_group_id (int), user_address_id (int), seller_location_id (int)",
+        "fields": "id (str), created_on (str), updated_on (str), code (str), start_date (str), end_date (str), submitted_on (str), accepted_on (str), completed_on (str), status (str), order_type (str), schedule_window (str), sent_auto_renewal_message (bool), disposal_location (str), order_group (str), main_product (str), seller (str), account_owner (str), submitted_by (str), created_by (str), price (float)",
         "method": "GET",
     },
     "api_v1_orders_internal_sales_data_list": {
@@ -837,24 +655,13 @@ MCP_TOOL_CATALOG = {
             "Use this for current-month sales performance snapshots."
         ),
     
-        "fields": "total_gmv (float), order_count (int), new_accounts (int), gmv_by_rep (JSON str: [{rep_id, rep_name, gmv}]), daily_pacing (JSON str: [{date, gmv}])",
+        "fields": "month (str), user (str), company.month_to_date.in_cart (float), company.month_to_date.scheduled (float), company.month_to_date.invoiced (float), company.month_to_date.commission_eligible (float)",
         "method": "GET",
     },
     "api_v1_orders_get": {
         "path": "/api/v1/orders/{id}/",
         "description": "Returns a single order by ID with full details.",
         "fields": "id (int), status (str), created_on (datetime), start_date (date), end_date (date), customer_total (float), seller_total (float), order_group_id (int)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_orders_change_supplier_list": {
-        "path": "/api/v1/orders/{order_id}/change-supplier/",
-        "description": (
-            "Returns eligible alternative suppliers for an existing order. "
-            "Fields: seller_id, seller_name, price, availability, distance_miles. "
-            "Use this to see which suppliers could fulfil a given order if the current one needs to be swapped."
-        ),
-        "fields": "seller_id (int), seller_name (str), price (float), distance_miles (float)",
         "method": "GET",
         "requires_id": True,
     },
@@ -869,7 +676,7 @@ MCP_TOOL_CATALOG = {
             "Use this to check what payment methods an account has, or count accounts with specific payment types."
         ),
     
-        "fields": "id (int), type (str: card/bank_account/net_terms), last4 (str), brand (str), is_default (bool), created_on (datetime)",
+        "fields": "id (str), user (str), user_group (str), active (bool), reason (str), type (str), card.number (str), card.name (str), card.brand (str), card.expiration_month (int), card.expiration_year (int), data.brand (str), data.last4 (str), data.checks.cvc_check (str), data.checks.address_line1_check (str), data.checks.address_postal_code_check (str), data.wallet (str), data.country (str), data.funding (str), data.exp_year (int), data.networks.available (JSON), data.networks.preferred (str), data.exp_month (int), data.fingerprint (str), data.display_brand (str), data.generated_from (str), data.regulated_status (str), data.three_d_secure_usage.supported (bool)",
         "method": "GET",
     },
     "api_v1_payment_methods_get": {
@@ -905,7 +712,7 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier payment summary or reconciliation totals."
         ),
     
-        "fields": "total_paid (float), total_pending (float), total_failed (float), payout_count (int)",
+        "fields": "total.count (int), total.amount (float), pending.count (int), pending.amount (float), this_week.count (int), this_week.amount (float)",
         "method": "GET",
     },
     "api_v1_payouts_get": {
@@ -927,7 +734,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list all cities Downstream serves, count coverage by state, "
             "or find which markets have seller presence."
         ),
-        "fields": "state_slug (str), city_slug (str), state_name (str), city_name (str), seller_location_count (int), is_indexed (bool)",
+        "fields": "location.stateSlug (str), location.stateName (str), location.citySlug (str), location.cityName (str), location.county (str), location.lat (float), location.lng (float), coverage.isServiced (bool), coverage.coverageScore (float), coverage.supplierCount (int), coverage.listingCount (int), coverage.topCategories (JSON), seo.title (str), seo.description (str), seo.canonicalPath (str), seo.indexable (bool), seo.faqItems (JSON), content.heroCopy (str), content.benefits (JSON), content.serviceHighlights (JSON), content.trustSignals (JSON), internalLinks.nearbyCities (JSON), internalLinks.statePagePath (str), meta.updatedAt (str)",
         "method": "GET",
     },
     "api_v1_public_location_pages_get": {
@@ -1002,7 +809,7 @@ MCP_TOOL_CATALOG = {
             "Filters: seller_id, city, state, is_active. "
             "Pass allow_all=true to see all locations platform-wide."
         ),
-        "fields": "id (int), seller_id (int), name (str), city (str), state (str), zip_code (str), is_active (bool), latitude (float), longitude (float), service_radius_miles (float), created_on (datetime)",
+        "fields": "id (str), object (str), created (int), updated (int), seller (str), open_days (JSON), open_hours (JSON), users (JSON), created_by (str), updated_by (str), is_compliant (bool), created_on (str), updated_on (str), is_deleted (bool), name (str), public_subdomain_enabled (bool), public_subdomain (str), street (str), city (str), state (str), postal_code (str), country (str), latitude (float), longitude (float), geo_point (str), open_time (str), close_time (str), lead_time_hrs (str), announcement (str), live_menu_is_active (bool), location_logo_image (str), sends_invoices (bool), do_not_rent (bool), payee_name (str), order_email (str), order_phone (str), gl_coi (str), gl_coi_expiration_date (str), gl_limit (str), auto_coi (str), auto_coi_expiration_date (str), auto_limit (str), workers_comp_coi (str), workers_comp_coi_expiration_date (str), workers_comp_limit (str), w9 (str), ein (str), company_type (str), payout_delay (int), timezone (str)",
         "method": "GET",
     },
     "api_v1_seller_locations_get": {
@@ -1027,7 +834,7 @@ MCP_TOOL_CATALOG = {
             "Use this to see which products a specific location offers, compare pricing across suppliers, "
             "or count active product listings per market."
         ),
-        "fields": "id (int), seller_location_id (int), seller_product_id (int), main_product_name (str), is_active (bool), base_price (float), rental_rate (float), allows_pickup (bool), created_on (datetime)",
+        "fields": "id (str), seller_product (str), seller_location (str), quote (str), service (float), material (float), rental (float), rental_multi_step (str), service_times_per_week (str), created_by (str), updated_by (str), is_complete (bool), created_on (str), updated_on (str), is_deleted (bool), active (bool), needs_approval (bool), total_inventory (str), min_price (str), max_price (str), service_radius (float), service_area_polygon (str), delivery_fee (float), removal_fee (float), fuel_environmental_markup (str), allows_pick_up (bool), winterization_fee (str), rental_one_step.id (str), rental_one_step.created_on (str), rental_one_step.updated_on (str), rental_one_step.is_deleted (str), rental_one_step.rate (float), rental_one_step.created_by (str), rental_one_step.updated_by (str), rental_one_step.seller_product_seller_location (str), rental_one_step (float), service.id (str), service.created_on (str), service.updated_on (str), service.is_deleted (str), service.price_per_mile (float), service.flat_rate_price (float), service.created_by (str), service.updated_by (str), service.seller_product_seller_location (str), material.id (str), material.waste_types (JSON), material.created_on (str), material.updated_on (str), material.is_deleted (str), material.created_by (str), material.updated_by (str), material.seller_product_seller_location (str), rental.id (str), rental.created_on (str), rental.updated_on (str), rental.is_deleted (str), rental.included_days (float), rental.price_per_day_included (float), rental.price_per_day_additional (float), rental.created_by (str), rental.updated_by (str), rental.seller_product_seller_location (str)",
         "method": "GET",
     },
     "api_v1_seller_product_seller_locations_metrics_list": {
@@ -1038,7 +845,7 @@ MCP_TOOL_CATALOG = {
             "Use this to analyze which product-location combinations generate the most orders or revenue."
         ),
     
-        "fields": "order_count (int), total_gmv (float), average_rating (float), conversion_rate (float)",
+        "fields": "active (int), needs_attention (int), inactive (int)",
         "method": "GET",
     },
     "api_v1_seller_product_seller_locations_get": {
@@ -1062,7 +869,7 @@ MCP_TOOL_CATALOG = {
             "or analyze product coverage per supplier."
         ),
     
-        "fields": "id (int), seller_id (int), main_product_id (int), main_product_name (str), name (str), is_active (bool), created_on (datetime)",
+        "fields": "id (str), seller (str), product (str), created_by (str), updated_by (str), created_on (str), updated_on (str), is_deleted (bool), active (bool)",
         "method": "GET",
     },
     "api_v1_seller_products_get": {
@@ -1083,7 +890,7 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier accounts-payable tracking or outstanding seller liabilities."
         ),
     
-        "fields": "id (int), seller_id (int), amount (float), status (str: pending/paid), due_date (date), order_group_id (int), created_on (datetime)",
+        "fields": "id (str), seller_location (str), location_mail_item (str), user_address (str), resolved_by (str), parent_invoice (str), child_invoices (JSON), line_items (JSON), created_on (str), updated_on (str), is_deleted (bool), invoice_file (str), supplier_invoice_id (str), invoice_date (str), due_date (str), amount (float), status (str), account_number (str), ocr_status (str), service_address_raw (str), vendor_address_raw (str), fuel_fee (str), env_fee (str), tax_amount (str), matched_user_address_confidence (int), variance_total (float), resolution_notes (str), resolved_at (str), ingestion_source (str), created_by (str), updated_by (str), parsed_data.product_description (str)",
         "method": "GET",
     },
     "api_v1_sellerinvoicepayable_get": {
@@ -1107,7 +914,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list all suppliers by name, count total active sellers, "
             "look up a seller by name, or get seller IDs for joining with other data."
         ),
-        "fields": "id (int), name (str), slug (str), is_active (bool), location_count (int), created_on (datetime)",
+        "fields": "id (str), created_by (str), updated_by (str), open_days (JSON), created_on (str), updated_on (str), is_deleted (bool), name (str), public_subdomain_enabled (bool), public_subdomain (str), phone (str), website (str), order_email (str), order_phone (str), type (str), location_type (str), status (str), lead_time (str), type_display (str), marketplace_display_name (str), open_time (str), close_time (str), lead_time_hrs (str), announcement (str), live_menu_is_active (bool), location_logo_url (str), logo (str), downstream_insurance_requirements_met (bool), badge (str), salesforce_seller_id (str), about_us (str), do_not_rent (bool)",
         "method": "GET",
     },
     "api_v1_sellers_get": {
@@ -1138,59 +945,11 @@ MCP_TOOL_CATALOG = {
             "Use this to list saved Stripe payment methods."
         ),
     
-        "fields": "id (str), type (str), card.last4 (str), card.brand (str), card.exp_month (int), card.exp_year (int), created (datetime)",
+        "fields": "id (str), object (str), allow_redisplay (str), created (int), customer (str), customer_account (str), livemode (bool), type (str), billing_details.address.city (str), billing_details.address.country (str), billing_details.address.line1 (str), billing_details.address.line2 (str), billing_details.address.postal_code (str), billing_details.address.state (str), billing_details.email (str), billing_details.name (str), billing_details.phone (str), billing_details.tax_id (str), card.brand (str), card.checks.address_line1_check (str), card.checks.address_postal_code_check (str), card.checks.cvc_check (str), card.country (str), card.display_brand (str), card.exp_month (int), card.exp_year (int), card.fingerprint (str), card.funding (str), card.generated_from (str), card.last4 (str), card.networks.available (JSON), card.networks.preferred (str), card.regulated_status (str), card.three_d_secure_usage.supported (bool), card.wallet (str), metadata.payment_method_id (str), metadata.token (str)",
         "method": "GET",
     },
 
     # ── TASKS ─────────────────────────────────────────────────────────────────
-
-    "api_v1_tasks_list": {
-        "path": "/api/v1/tasks/",
-        "description": (
-            "Returns CRM tasks (to-dos) assigned to the authenticated user or their team. "
-            "Fields: id, title, description, status (open/in_progress/done), due_date, "
-            "assigned_to, created_by, related_user_group, created_on. "
-            "Use this to list open tasks, track task completion rates, or audit CRM activity."
-        ),
-    
-        "fields": "id (int), title (str), status (str: open/in_progress/done), due_date (date), assigned_to_id (int), created_by_id (int), related_user_group_id (int), created_on (datetime)",
-        "method": "GET",
-    },
-    "api_v1_tasks_get": {
-        "path": "/api/v1/tasks/{id}/",
-        "description": "Returns a single task by ID.",
-        "fields": "id (int), title (str), description (str), status (str), due_date (date), assigned_to_id (int), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_activities_list": {
-        "path": "/api/v1/tasks/{id}/activities/",
-        "description": "Returns the activity log (status changes, edits) for a specific task.",
-        "fields": "id (int), action (str), changed_by (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_attachments_list": {
-        "path": "/api/v1/tasks/{id}/attachments/",
-        "description": "Returns file attachments for a specific task.",
-        "fields": "id (int), file_url (str), filename (str), uploaded_by (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_comments_list": {
-        "path": "/api/v1/tasks/{id}/comments/",
-        "description": "Returns comments on a specific task.",
-        "fields": "id (int), content (str), author_id (int), author_name (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_watchers_list": {
-        "path": "/api/v1/tasks/{id}/watchers/",
-        "description": "Returns users watching a specific task for notifications.",
-        "fields": "id (int), user_id (int), user_name (str), email (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── TIME SLOTS ────────────────────────────────────────────────────────────
 
@@ -1203,7 +962,7 @@ MCP_TOOL_CATALOG = {
             "Use only to get time slot IDs for order creation or display labels in UI."
         ),
     
-        "fields": "id (int), label (str), start_time (time), end_time (time)",
+        "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), start (str), end (str), created_by (str), updated_by (str)",
         "method": "GET",
     },
     "api_v1_time_slots_get": {
@@ -1224,7 +983,7 @@ MCP_TOOL_CATALOG = {
             "Use this to get address type IDs for filtering or categorizing job sites."
         ),
     
-        "fields": "id (int), name (str)",
+        "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), sort (int), created_by (str), updated_by (str)",
         "method": "GET",
     },
     "api_v1_user_address_types_get": {
@@ -1249,7 +1008,7 @@ MCP_TOOL_CATALOG = {
             "count active projects per account, or get site IDs for order filtering."
         ),
     
-        "fields": "id (int), name (str), address (str), city (str), state (str), zip_code (str), latitude (float), longitude (float), user_group_id (int), is_active (bool), created_on (datetime)",
+        "fields": "id (str), object (str), created (int), updated (int), users (JSON), order_groups (JSON), invoices (JSON), has_past_due_invoices (bool), created_on (str), updated_on (str), is_deleted (bool), name (str), project_id (str), street (str), street2 (str), city (str), state (str), postal_code (str), country (str), latitude (float), longitude (float), access_details (str), description (str), autopay (bool), is_archived (bool), allow_saturday_delivery (bool), allow_sunday_delivery (bool), tax_exempt_status (str), estimated_start_date (str), estimated_end_date (str), source (str), source_id (str), product_wish_list (str), bid_due_date (str), estimated_project_value (float), first_touch_sent_at (str), created_by (str), updated_by (str), user_group (str), user (str), user_address_type (str), default_payment_method (str), brand (str), on_site_contact (str)",
         "method": "GET",
     },
     "api_v1_user_addresses_filter_options_list": {
@@ -1259,7 +1018,7 @@ MCP_TOOL_CATALOG = {
             "Returns distinct city/state values for building filter UI."
         ),
     
-        "fields": "cities (JSON str: [str]), states (JSON str: [str])",
+        "fields": "value (str), label (str), count (int)",
         "method": "GET",
     },
     "api_v1_user_addresses_get": {
@@ -1292,7 +1051,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list pending invitations awaiting admin approval."
         ),
     
-        "fields": "id (int), user_group_id (int), invited_email (str), invited_by (str), status (str), created_on (datetime)",
+        "fields": "id (str), redirect_url (str), updated_by (str), created_by (str), created_on (str), updated_on (str), is_deleted (bool), email (str), phone (str), type (str), first_name (str), last_name (str), status (str), user_group (str), role (str), user.id (str), user.user_id (str), user.phone (str), user.phone_revealed (bool), user.phone_revealed_on (str), user.email (str), user.push_id (str), user.date_joined (str), user.first_name (str), user.last_name (str), user.username (str), user.photo_url (str), user.photo (str), user.identity_verified (bool), user.is_onboarded (bool), user.is_staff (bool), user.is_superuser (bool), user.is_admin (bool), user.is_archived (bool), user.is_active (bool), user.source (str), user.terms_accepted (str), user.type (str), user.last_active (str), user.last_login (str), user.timezone (str), user.send_new_invoice_emails (bool), user.redirect_url (str), user.user_group (str), user.role (str)",
         "method": "GET",
     },
     "api_v1_user_group_admin_approval_user_invite_get": {
@@ -1314,7 +1073,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list credit applications, track approval status, or count pending reviews."
         ),
     
-        "fields": "id (int), user_group_id (int), status (str: pending/approved/denied), first_name (str), last_name (str), email (str), requested_credit_limit (float), created_on (datetime)",
+        "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), requested_credit_limit (float), status (str), estimated_monthly_revenue (float), estimated_monthly_spend (float), accepts_credit_authorization (bool), credit_report (str), assessment (str), balance (str), run_rate (str), cashflow (str), created_by (str), updated_by (str), user_group (str)",
         "method": "GET",
     },
     "api_v1_user_group_credit_applications_get": {
@@ -1341,7 +1100,7 @@ MCP_TOOL_CATALOG = {
             "count accounts with net terms, find accounts by name, "
             "or rank accounts by spend for prioritization."
         ),
-        "fields": "id (int), name (str), industry (str), company_size (str), net_terms (bool), pay_later (bool), is_active (bool), created_on (datetime)",
+        "fields": "id (str), seller (str), credit_applications (JSON), net_terms (int), users (JSON), user_id (str), account_owner (str), owner_pod (str), identity_verified (bool), pending_credit_determination (bool), latest_policies (JSON), sales_status (str), lifecycle_status (str), first_confirmed_order_date (str), last_confirmed_order_date (str), days_since_last_order (int), created_on (str), updated_on (str), is_deleted (bool), name (str), domain (str), phone (str), is_superuser (bool), parent_account_id (str), credit_line_limit (float), compliance_status (str), tax_exempt_status (str), do_not_rent (bool), send_account_summary_emails (bool), leased_and_rented_equipment_insurance_type (str), owned_and_rented_equiptment_coi (str), leased_and_rented_equipment_insurance_limit (str), RPP_COI_Exp_Date (str), apollo_account_id (str), tax_exempt_document (str), tax_exempt_expiration_date (str), master_service_agreement (str), source (str), source_id (str), is_unverified_domain (bool), linkedin_url (str), website_url (str), twitter_url (str), facebook_url (str), logo_url (str), short_description (str), founded_year (float), languages (JSON), keywords (JSON), street_address (str), city (str), state (str), postal_code (str), country (str), raw_address (str), annual_revenue (float), annual_revenue_printed (str), market_cap (str), publicly_traded_symbol (str), publicly_traded_exchange (str), total_funding (str), total_funding_printed (str), latest_funding_stage (str), latest_funding_round_date (str), sic_codes (JSON), naics_codes (JSON), technology_names (JSON), current_technologies (JSON), num_suborganizations (float), suborganizations (JSON), created_by (str), updated_by (str), industry (int), default_payment_method (str), superadmin_user (str), branding.id (str), branding.display_name (str), branding.logo (str), branding.primary (str), branding.secondary (str), branding.account (str), billing.id (str), billing.email (str), billing.tax_id (str), billing.street (str), billing.city (str), billing.state (str), billing.postal_code (str), billing.country (str), billing.latitude (float), billing.longitude (float), billing.send_new_invoice_emails (bool), legal.id (str), legal.name (str), legal.tax_id (float), legal.accepted_net_terms (str), legal.years_in_business (float), legal.doing_business_as (str), legal.structure (str), legal.industry (str), legal.street (str), legal.city (str), legal.state (str), legal.postal_code (str), legal.country (str), legal.latitude (float), legal.longitude (float), departmental_head_count.legal (float), departmental_head_count.sales (float), departmental_head_count.finance (float), departmental_head_count.support (float), departmental_head_count.education (float), departmental_head_count.marketing (float), departmental_head_count.accounting (float), departmental_head_count.consulting (float), departmental_head_count.operations (float), departmental_head_count.engineering (float), departmental_head_count.data_science (float), departmental_head_count.administrative (float), departmental_head_count.arts_and_design (float), departmental_head_count.human_resources (float), departmental_head_count.entrepreneurship (float), departmental_head_count.product_management (float), departmental_head_count.business_development (float), departmental_head_count.information_technology (float), departmental_head_count.media_and_commmunication (float), enrichment_data.apollo.id (str), enrichment_data.apollo.city (str), enrichment_data.apollo.name (str), enrichment_data.apollo.phone (str), enrichment_data.apollo.state (str), enrichment_data.apollo.account.id (str), enrichment_data.apollo.account.city (str), enrichment_data.apollo.account.name (str), enrichment_data.apollo.account.phone (str), enrichment_data.apollo.account.state (str), enrichment_data.apollo.account.domain (str), enrichment_data.apollo.account.source (str), enrichment_data.apollo.account.country (str), enrichment_data.apollo.account.team_id (str), enrichment_data.apollo.account.modality (str), enrichment_data.apollo.account.owner_id (str), enrichment_data.apollo.account.label_ids (JSON), enrichment_data.apollo.account.created_at (str), enrichment_data.apollo.account.creator_id (str), enrichment_data.apollo.account.hubspot_id (float), enrichment_data.apollo.account.postal_code (str), enrichment_data.apollo.account.raw_address (str), enrichment_data.apollo.account.show_intent (str), enrichment_data.apollo.account.twitter_url (float), enrichment_data.apollo.account.crm_owner_id (float), enrichment_data.apollo.account.facebook_url (float), enrichment_data.apollo.account.linkedin_url (float), enrichment_data.apollo.account.phone_status (str), enrichment_data.apollo.account.salesforce_id (float), enrichment_data.apollo.account.crm_record_url (float), enrichment_data.apollo.account.street_address (str), enrichment_data.apollo.account.existence_level (str), enrichment_data.apollo.account.intent_strength (float), enrichment_data.apollo.account.organization_id (str), enrichment_data.apollo.account.original_source (str), enrichment_data.apollo.account.sanitized_phone (str), enrichment_data.apollo.account.account_stage_id (str), enrichment_data.apollo.account.parent_account_id (float), enrichment_data.apollo.account.last_activity_date (str), enrichment_data.apollo.account.source_display_name (str), enrichment_data.apollo.account.typed_custom_fields.68043bc245357e001902a93a (str), enrichment_data.apollo.account.typed_custom_fields.680bda11ca8381001cb1d86a (str), enrichment_data.apollo.account.typed_custom_fields.680bdaf4c118880019961b5f (str), enrichment_data.apollo.account.typed_custom_fields.680bdb63c0590800117c311c (float), enrichment_data.apollo.account.typed_custom_fields.680bdc13dba4db0015acbf62 (str), enrichment_data.apollo.account.typed_custom_fields.680bde0ccc2ef60011fb8832 (str), enrichment_data.apollo.account.typed_custom_fields.680bde3249f6f7001dfc9c23 (str), enrichment_data.apollo.account.typed_custom_fields.680bde4d65b8c10018d6bbac (str), enrichment_data.apollo.account.typed_custom_fields.680be9321c637b001dac86b7 (str), enrichment_data.apollo.account.typed_custom_fields.68123ea44ab550001d773733 (float), enrichment_data.apollo.account.godmode_apollo_creator (float), enrichment_data.apollo.account.account_playbook_statuses (JSON), enrichment_data.apollo.account.suggested_from_rule_engine_config_id (float), enrichment_data.apollo.account.organization_headcount_six_month_growth (float), enrichment_data.apollo.account.organization_headcount_twelve_month_growth (float), enrichment_data.apollo.account.organization_headcount_twenty_four_month_growth (float), enrichment_data.apollo.country (str), enrichment_data.apollo.blog_url (float), enrichment_data.apollo.industry (str), enrichment_data.apollo.keywords (JSON), enrichment_data.apollo.logo_url (str), enrichment_data.apollo.languages (JSON), enrichment_data.apollo.sic_codes (JSON), enrichment_data.apollo.account_id (str), enrichment_data.apollo.industries (JSON), enrichment_data.apollo.postal_code (str), enrichment_data.apollo.raw_address (str), enrichment_data.apollo.twitter_url (str), enrichment_data.apollo.website_url (str), enrichment_data.apollo.facebook_url (str), enrichment_data.apollo.founded_year (float), enrichment_data.apollo.linkedin_uid (str), enrichment_data.apollo.linkedin_url (str), enrichment_data.apollo.alexa_ranking (float), enrichment_data.apollo.angellist_url (float), enrichment_data.apollo.primary_phone.number (str), enrichment_data.apollo.primary_phone.source (str), enrichment_data.apollo.primary_phone.sanitized_number (str), enrichment_data.apollo.total_funding (float), enrichment_data.apollo.annual_revenue (float), enrichment_data.apollo.crunchbase_url (float), enrichment_data.apollo.funding_events (JSON), enrichment_data.apollo.primary_domain (str), enrichment_data.apollo.street_address (str), enrichment_data.apollo.industry_tag_id (str), enrichment_data.apollo.sanitized_phone (str), enrichment_data.apollo.snippets_loaded (str), enrichment_data.apollo.org_chart_sector (str), enrichment_data.apollo.suborganizations (JSON), enrichment_data.apollo.technology_names (JSON), enrichment_data.apollo.industry_tag_hash.construction (str), enrichment_data.apollo.org_chart_removed (float), enrichment_data.apollo.short_description (str), enrichment_data.apollo.current_technologies (JSON), enrichment_data.apollo.latest_funding_stage (float), enrichment_data.apollo.num_suborganizations (float), enrichment_data.apollo.organization_revenue (float), enrichment_data.apollo.secondary_industries (JSON), enrichment_data.apollo.retail_location_count (float), enrichment_data.apollo.total_funding_printed (float), enrichment_data.apollo.annual_revenue_printed (str), enrichment_data.apollo.publicly_traded_symbol (str), enrichment_data.apollo.departmental_head_count.legal (float), enrichment_data.apollo.departmental_head_count.sales (float), enrichment_data.apollo.departmental_head_count.finance (float), enrichment_data.apollo.departmental_head_count.support (float), enrichment_data.apollo.departmental_head_count.education (float), enrichment_data.apollo.departmental_head_count.marketing (float), enrichment_data.apollo.departmental_head_count.accounting (float), enrichment_data.apollo.departmental_head_count.consulting (float), enrichment_data.apollo.departmental_head_count.operations (float), enrichment_data.apollo.departmental_head_count.engineering (float), enrichment_data.apollo.departmental_head_count.data_science (float), enrichment_data.apollo.departmental_head_count.administrative (float), enrichment_data.apollo.departmental_head_count.arts_and_design (float), enrichment_data.apollo.departmental_head_count.human_resources (float), enrichment_data.apollo.departmental_head_count.entrepreneurship (float), enrichment_data.apollo.departmental_head_count.product_management (float), enrichment_data.apollo.departmental_head_count.business_development (float), enrichment_data.apollo.departmental_head_count.information_technology (float), enrichment_data.apollo.departmental_head_count.media_and_commmunication (float), enrichment_data.apollo.estimated_num_employees (float), enrichment_data.apollo.owned_by_organization_id (float), enrichment_data.apollo.publicly_traded_exchange (str), enrichment_data.apollo.latest_funding_round_date (float), enrichment_data.apollo.org_chart_root_people_ids (JSON), enrichment_data.apollo.organization_revenue_printed (str), enrichment_data.apollo.org_chart_show_department_filter (float), legal (float), enrichment_data.apollo.market_cap (str), enrichment_data.apollo.naics_codes (JSON), enrichment_data.apollo.industry_tag_hash.retail (str)",
         "method": "GET",
     },
     "api_v1_user_groups_get": {
@@ -1366,7 +1125,7 @@ MCP_TOOL_CATALOG = {
             "Use this to check if the current user has completed identity verification."
         ),
     
-        "fields": "is_verified (bool), verification_status (str), verified_at (datetime)",
+        "fields": "id (str), user_group (str), identity_verified (bool), identity_verification_session.id (str), identity_verification_session.stripe_session_id (str), identity_verification_session.status (str), identity_verification_session.created_on (str), identity_verification_session.updated_on (str), identity_verification_session.user (str)",
         "method": "GET",
     },
 
@@ -1384,7 +1143,7 @@ MCP_TOOL_CATALOG = {
             "find which accounts have onboarded users, or get user IDs for cohort analysis."
         ),
     
-        "fields": "id (int), email (str), first_name (str), last_name (str), type (str: ADMIN/MEMBER/VIEW_ONLY), is_onboarded (bool), is_active (bool), is_archived (bool), user_group.id (int), user_group.name (str)",
+        "fields": "id (str), user_id (str), phone (str), phone_revealed (bool), phone_revealed_on (str), email (str), push_id (str), date_joined (str), first_name (str), last_name (str), username (str), photo_url (str), photo (str), identity_verified (bool), is_onboarded (bool), is_staff (bool), is_superuser (bool), is_admin (bool), is_archived (bool), is_active (bool), source (str), terms_accepted (str), type (str), last_active (str), last_login (str), timezone (str), send_new_invoice_emails (bool), redirect_url (str), user_group (str), role (str)",
         "method": "GET",
     },
     "api_v1_users_me_list": {
@@ -1394,7 +1153,7 @@ MCP_TOOL_CATALOG = {
             "Use this to identify who is making requests (role, account, type)."
         ),
     
-        "fields": "id (int), email (str), first_name (str), last_name (str), type (str), user_group.id (int), user_group.name (str)",
+        "fields": "id (str), user_id (str), phone (str), phone_revealed (bool), phone_revealed_on (str), email (str), push_id (str), date_joined (str), first_name (str), last_name (str), username (str), photo_url (str), photo (str), identity_verified (bool), is_onboarded (bool), is_staff (bool), is_superuser (bool), is_admin (bool), is_archived (bool), is_active (bool), source (str), terms_accepted (str), type (str), last_active (str), last_login (str), timezone (str), send_new_invoice_emails (bool), redirect_url (str), user_group (str), role (str)",
         "method": "GET",
     },
     "api_v1_users_get": {
@@ -1416,7 +1175,7 @@ MCP_TOOL_CATALOG = {
             "Use only to get an ID or display label."
         ),
     
-        "fields": "id (int), name (str), slug (str), description (str), is_hazardous (bool)",
+        "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), created_by (str), updated_by (str)",
         "method": "GET",
     },
     "api_v1_waste_types_get": {
@@ -1448,7 +1207,7 @@ MCP_TOOL_CATALOG = {
             "Use this to inspect the contents of the current user's active cart."
         ),
     
-        "fields": "cart_groups (JSON str: [{seller_location_id, items: [{product, quantity, price}]}])",
+        "fields": "cart (JSON), subtotal (float), cart_count (int)",
         "method": "GET",
     },
     "checkout_v1_cart_count_list": {
@@ -1459,7 +1218,7 @@ MCP_TOOL_CATALOG = {
             "Use this for the cart badge count in the navbar."
         ),
     
-        "fields": "count (int)",
+        "fields": "cart_count (int)",
         "method": "GET",
     },
     "checkout_v1_carts_list": {
@@ -1470,7 +1229,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list carts by job site, count carts per account, or track cart activity."
         ),
     
-        "fields": "id (int), user_address_id (int), item_count (int), total_price (float), created_on (datetime), updated_on (datetime)",
+        "fields": "id (str), code (str), created_on (str), updated_on (str), payment_method (str), pay_later (bool), to_emails (str), quote_expiration (str), quote_accepted_at (str), submitted_on (str), lost_on (str), lost_reason (str), first_touch_email_id (str), first_touch_open_count (int), first_touch_click_count (int), orders (JSON), user_address.id (str), user_address.object (str), user_address.created (int), user_address.updated (int), user_address.users (JSON), user_address.order_groups (JSON), user_address.invoices (JSON), user_address.has_past_due_invoices (bool), user_address.created_on (str), user_address.updated_on (str), user_address.is_deleted (bool), user_address.name (str), user_address.project_id (str), user_address.street (str), user_address.street2 (str), user_address.city (str), user_address.state (str), user_address.postal_code (str), user_address.country (str), user_address.latitude (float), user_address.longitude (float), user_address.access_details (str), user_address.description (str), user_address.autopay (bool), user_address.is_archived (bool), user_address.allow_saturday_delivery (bool), user_address.allow_sunday_delivery (bool), user_address.tax_exempt_status (str), user_address.estimated_start_date (str), user_address.estimated_end_date (str), user_address.source (str), user_address.source_id (str), user_address.product_wish_list (str), user_address.bid_due_date (str), user_address.estimated_project_value (str), user_address.first_touch_sent_at (str), user_address.created_by (str), user_address.updated_by (str), user_address.user_group (str), user_address.user (str), user_address.user_address_type (str), user_address.default_payment_method (str), user_address.brand (str), user_address.on_site_contact (str)",
         "method": "GET",
     },
     "checkout_v1_carts_get": {
@@ -1662,6 +1421,37 @@ MCP_TOOL_CATALOG = {
         "fields": "supplier_count_nearby (int), average_price (float), price_range.min (float), price_range.max (float), competitive_index (float)",
         "method": "POST",
     },
+    # ── IMPERSONATION ─────────────────────────────────────────────────────────
+
+    "impersonation_start": {
+        "path": None,
+        "description": (
+            "Start impersonating a specific user by UUID. "
+            "All subsequent API calls will be scoped to that user's data. "
+            "Use when switching context to act on behalf of a specific user."
+        ),
+        "fields": "",
+        "method": "POST",
+    },
+    "impersonation_end": {
+        "path": None,
+        "description": (
+            "Stop impersonating the current user and revert to normal authentication. "
+            "Use after finishing work scoped to an impersonated user."
+        ),
+        "fields": "",
+        "method": "POST",
+    },
+    "impersonation_status": {
+        "path": None,
+        "description": (
+            "Check whether impersonation is currently active and which user is being impersonated. "
+            "Use when you need to know the current impersonation state."
+        ),
+        "fields": "is_active (bool), user_id (str)",
+        "method": "GET",
+    },
+
 }
 
 

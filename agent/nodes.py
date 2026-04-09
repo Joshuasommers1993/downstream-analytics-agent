@@ -187,51 +187,62 @@ def reasoning_node(state: AgentState) -> AgentState:
     # ── First call: build the full FETCH/COMPUTE plan ─────────────────────────
     if not state["logic_sentences"]:
 
-        # Stage 1: RAG candidates → gpt-4o-mini selects only needed tools
-        console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
+        # Stage 1: downstream agent selects relevant tools
+        console.print("[blue]  → Stage 1: asking downstream agent for relevant tools...[/]")
+        focused_tools = get_relevant_tools(state["question"], top_k=8)
 
-        candidates = get_relevant_tools(state["question"], top_k=8)
+        # Print selected tool names
+        for line in focused_tools.splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("->"):
+                console.print(f"[blue]     {stripped}[/]")
+            elif stripped.startswith("->"):
+                console.print(f"[dim]       {stripped}[/]")
 
-        selection_prompt = f"""
-You are a tool selector. Given an analytics question and a list of candidate MCP tools,
-choose only the tools actually needed to answer the question.
-
-Rules:
-- Read each tool description carefully
-- Select only tools whose data directly answers the question
-- Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
-- Output a JSON array of tool names only, nothing else
-- If multiple fetches are needed (e.g. orders + users), include all required tools
-
-CANDIDATE TOOLS:
-{candidates}
-
-Question: {state["question"]}
-
-Output JSON array of selected tool names only:
-""".strip()
-
-        sel_response = llm_mini.invoke(selection_prompt)
-        sel_raw = sel_response.content.strip()
-        if sel_raw.startswith("```"):
-            sel_raw = sel_raw.split("```")[1]
-            if sel_raw.startswith("json"):
-                sel_raw = sel_raw[4:]
-        sel_raw = sel_raw.strip()
-
-        try:
-            selected_tools = json.loads(sel_raw)
-        except Exception:
-            selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
-
-        console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
-
-        # Build focused tool block with descriptions + CSV field schemas
-        from agent.mcp_catalog import MCP_TOOL_CATALOG
-        focused_tools = "\n".join(
-            _format_tool_block(t, MCP_TOOL_CATALOG[t])
-            for t in selected_tools if t in MCP_TOOL_CATALOG
-        ) or candidates  # fallback to full candidates if selection fails
+        # Previous Stage 1 flow kept for reference, but intentionally disabled.
+        # console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
+        #
+        # candidates = get_relevant_tools(state["question"], top_k=8)
+        #
+        # selection_prompt = f"""
+        # You are a tool selector. Given an analytics question and a list of candidate MCP tools,
+        # choose only the tools actually needed to answer the question.
+        #
+        # Rules:
+        # - Read each tool description carefully
+        # - Select only tools whose data directly answers the question
+        # - Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
+        # - Output a JSON array of tool names only, nothing else
+        # - If multiple fetches are needed (e.g. orders + users), include all required tools
+        #
+        # CANDIDATE TOOLS:
+        # {candidates}
+        #
+        # Question: {state["question"]}
+        #
+        # Output JSON array of selected tool names only:
+        # """.strip()
+        #
+        # sel_response = llm_mini.invoke(selection_prompt)
+        # sel_raw = sel_response.content.strip()
+        # if sel_raw.startswith("```"):
+        #     sel_raw = sel_raw.split("```")[1]
+        #     if sel_raw.startswith("json"):
+        #         sel_raw = sel_raw[4:]
+        # sel_raw = sel_raw.strip()
+        #
+        # try:
+        #     selected_tools = json.loads(sel_raw)
+        # except Exception:
+        #     selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
+        #
+        # console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
+        #
+        # from agent.mcp_catalog import MCP_TOOL_CATALOG
+        # focused_tools = "\n".join(
+        #     _format_tool_block(t, MCP_TOOL_CATALOG[t])
+        #     for t in selected_tools if t in MCP_TOOL_CATALOG
+        # ) or candidates  # fallback to full candidates if selection fails
 
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
@@ -245,11 +256,17 @@ Rules:
   * Use the exact tool name from the list below
   * Mention any filters (e.g. status=SCHEDULED, start_date=6 months ago)
 - COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
-  * Use read_csv_auto('FETCH_N') where N = 0-indexed FETCH step number
-    (FETCH_0 = result of the 1st FETCH, FETCH_1 = result of the 2nd FETCH, etc.)
+  * Use read_csv_auto('FETCH_N') where N = 0-indexed position in the temp_files list
+    - FETCH_0 = result of the 1st FETCH step
+    - FETCH_1 = result of the 2nd FETCH step OR result of the 1st COMPUTE step (if it was saved)
+    - Each FETCH and each COMPUTE step that produces output adds one entry to temp_files in order
+  * Use CTEs (WITH clauses) to handle multi-step logic inside a single COMPUTE step
+    - PREFER one COMPUTE step with CTEs over multiple chained COMPUTE steps
+    - Example: WITH a AS (...), b AS (...) SELECT ... FROM a JOIN b ...
   * Use only the column names listed in each tool's "CSV columns"
   * For JSON array columns, use json_extract(col, '$[*].field') to access items
   * For dot-notation columns (e.g. conversion_rates.overall), quote them: "conversion_rates.overall"
+  * Use epoch() for date arithmetic: epoch(col::TIMESTAMP) gives Unix seconds; divide by 86400 for days
   * SELECT only — no INSERT/UPDATE/DELETE
   * Return a concise, focused result
 - FETCH steps must come before COMPUTE steps that depend on them
@@ -429,8 +446,14 @@ def execution_node(state: AgentState) -> AgentState:
         console.print(f"[cyan]  → Result:[/]")
         console.print(Panel(result_str, style="cyan dim", padding=(0, 2)))
 
+        # Save COMPUTE result to CSV so later steps can reference it as FETCH_N
+        compute_idx = len(state["temp_files"])
+        compute_file = f"{SESSION_DIR}/compute_{compute_idx}.csv"
+        result_df.to_csv(compute_file, index=False)
+
         return {
             **state,
+            "temp_files": state["temp_files"] + [compute_file],
             "step_results": state["step_results"] + [
                 f"Step {state['current_idx']+1}: {result_str}"
             ],
