@@ -6,40 +6,6 @@ MCP_TOOL_CATALOG = {
 
     # ── ENRICHMENT ────────────────────────────────────────────────────────────
 
-    "api_enrichment_phone_reveal_account_usage_get": {
-        "path": "/api/enrichment/phone-reveal/account-usage/{user_group_id}/",
-        "description": (
-            "Returns the phone-reveal usage count for a specific user group (account) against its monthly cap. "
-            "Fields: reveals_used, reveals_cap, user_group_id. "
-            "Use this to check how many phone numbers have been revealed for a given account and whether the quota is exhausted."
-        ),
-        "fields": "reveals_used (int), reveals_cap (int), user_group_id (int)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_enrichment_phone_reveal_quota_list": {
-        "path": "/api/enrichment/phone-reveal/quota/",
-        "description": (
-            "Returns the current monthly phone-reveal quota status for the authenticated org. "
-            "Fields: quota_used, quota_total, quota_remaining, reset_date. "
-            "Use this to check org-wide phone reveal limits and remaining capacity."
-        ),
-    
-        "fields": "period (str), credits_limit (int), credits_used (int), credits_remaining (int)",
-        "method": "GET",
-    },
-    "api_enrichment_user_groups_suggested_coworkers_list": {
-        "path": "/api/enrichment/user-groups/{user_group_id}/suggested-coworkers/",
-        "description": (
-            "Returns Apollo-sourced people at the same company domain as the given user group, suitable for invite suggestions. "
-            "Fields: first_name, last_name, email, title, linkedin_url. "
-            "Use this to find potential new users to invite to an account based on company email domain."
-        ),
-        "fields": "first_name (str), last_name (str), email (str), title (str), linkedin_url (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
-
     # ── INSIGHT HUB (pre-computed sales analytics) ────────────────────────────
 
     "api_insight_hub_account_classification_list": {
@@ -237,17 +203,6 @@ MCP_TOOL_CATALOG = {
         "fields": "id (int), type (str: email/call/note), subject (str), body (str), created_by (str), created_on (datetime)",
         "method": "GET",
     },
-    "api_v1_admin_internal_hierarchy_org_chart_list": {
-        "path": "/api/v1/admin/internal-hierarchy/org-chart/",
-        "description": (
-            "Admin-only. Returns the canonical Downstream internal org chart: teams, managers, and rep assignments. "
-            "Use this to look up team structure, find which rep belongs to which team, "
-            "or identify reporting relationships."
-        ),
-    
-        "fields": "id (str), object (str), name (str), slug (str), type (str), parent_id (str)",
-        "method": "GET",
-    },
     "api_v1_admin_sales_target_vs_actuals_list": {
         "path": "/api/v1/admin/sales/target-vs-actuals/",
         "description": (
@@ -293,29 +248,6 @@ MCP_TOOL_CATALOG = {
         "fields": "period.as_of (str), period.current_month_start (str), period.previous_month_start (str), gmv.goal (float), gmv.current (float), gmv.previous_month (float), gmv.gap (float), gmv.attainment_percent (float), users.goal (int), users.current (int), users.gap (int), users.attainment_percent (float), job_site_starts.goal (int), job_site_starts.current (int), job_site_starts.gap (int), job_site_starts.attainment_percent (float), project_start_funnel.target_monthly_project_starts (int), project_start_funnel.expected_to_date (int), project_start_funnel.month_start (str), project_start_funnel.month_end (str), project_start_funnel.as_of (str), project_start_funnel.addresses_starting_this_month (int), project_start_funnel.due_by_now (int), project_start_funnel.later_this_month (int), project_start_funnel.due_by_now_with_populated_cart (int), project_start_funnel.due_by_now_with_checked_out_cart (int), project_start_funnel.due_by_now_added_to_cart_pct (float), project_start_funnel.due_by_now_cart_to_checkout_pct (float), project_start_funnel.due_by_now_added_to_checkout_pct (float)",
         "method": "GET",
     },
-    "api_v1_admin_user_groups_spend_potential_list": {
-        "path": "/api/v1/admin/user-groups/spend-potential/",
-        "description": (
-            "Admin-only. Returns advisory monthly spend-potential estimates for all user groups. "
-            "Uses conservative product-fit heuristics and recent order history to estimate how much each account could spend. "
-            "Fields: user_group_id, user_group_name, estimated_monthly_spend, confidence. "
-            "Use this for account prioritization, TAM estimation per account, or whitespace analysis."
-        ),
-    
-        "fields": "user_group_id (int), user_group_name (str), estimated_monthly_spend (float), confidence (str)",
-        "method": "GET",
-    },
-    "api_v1_admin_user_groups_enrichment_list": {
-        "path": "/api/v1/admin/user-groups/{user_group_id}/enrichment/",
-        "description": (
-            "Admin-only. Returns enrichment data stored for a user group from third-party providers (Apollo, Clearbit, etc.). "
-            "Includes company size, employee count, industry, revenue range, LinkedIn URL, and raw provider payloads. "
-            "Use this to look up firmographic data for an account."
-        ),
-        "fields": "company_size (str), employee_count (int), industry (str), revenue_range (str), linkedin_url (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
     "api_v1_admin_user_groups_goal_progress_list": {
         "path": "/api/v1/admin/user-groups/{user_group_id}/goal-progress/",
         "description": (
@@ -335,17 +267,6 @@ MCP_TOOL_CATALOG = {
             "Use this to retrieve account notes or activity log for a customer."
         ),
         "fields": "id (int), content (str), created_by (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_admin_user_groups_sales_state_list": {
-        "path": "/api/v1/admin/user-groups/{user_group_id}/sales-state/",
-        "description": (
-            "Admin-only. Returns the current manual sales status and derived lifecycle metadata for an account: "
-            "sales_state (prospect/active/churned/etc.), days_since_last_order, lifecycle_stage. "
-            "Use this to check the CRM status of a customer or identify accounts at risk."
-        ),
-        "fields": "sales_state (str), days_since_last_order (int), lifecycle_stage (str)",
         "method": "GET",
         "requires_id": True,
     },
@@ -377,28 +298,6 @@ MCP_TOOL_CATALOG = {
     },
 
     # ── BRANDS ────────────────────────────────────────────────────────────────
-
-    "api_v1_brands_list": {
-        "path": "/api/v1/brands/",
-        "description": (
-            "Returns all product brands in the catalog. Supports name search. "
-            "Fields: id, name, slug, logo_url. "
-            "Use this to list brands, search for a specific brand, or get brand IDs for filtering products."
-        ),
-    
-        "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), location_count (int), category (str), created_by (str), updated_by (str)",
-        "method": "GET",
-    },
-    "api_v1_brands_get": {
-        "path": "/api/v1/brands/{id}/",
-        "description": (
-            "Returns a single brand by ID. "
-            "Fields: id, name, slug, logo_url. "
-        ),
-        "fields": "id (int), name (str), slug (str), logo_url (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── DAY OF WEEKS ──────────────────────────────────────────────────────────
 
@@ -436,26 +335,6 @@ MCP_TOOL_CATALOG = {
     },
 
     # ── GROUP INVOICES ────────────────────────────────────────────────────────
-
-    "api_v1_group_invoices_list": {
-        "path": "/api/v1/group_invoices/",
-        "description": (
-            "Returns grouped invoices (consolidated billing statements) visible to the authenticated customer context. "
-            "A GroupInvoice bundles multiple individual invoices into one statement. "
-            "Fields: id, user_group, total, status, invoice_count, due_date, created_on. "
-            "Use this for account-level billing summaries or consolidated payment tracking."
-        ),
-    
-        "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
-        "method": "GET",
-    },
-    "api_v1_group_invoices_get": {
-        "path": "/api/v1/group_invoices/{id}/",
-        "description": "Returns a single grouped invoice by ID with its constituent invoices.",
-        "fields": "id (int), total (float), status (str), invoice_count (int), due_date (date), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── IDENTITY VERIFICATION ─────────────────────────────────────────────────
 
@@ -566,18 +445,6 @@ MCP_TOOL_CATALOG = {
     },
 
     # ── KNOWLEDGE ─────────────────────────────────────────────────────────────
-
-    "api_v1_knowledge_list": {
-        "path": "/api/v1/knowledge/",
-        "description": (
-            "Returns the list of knowledge documents (help articles, internal docs) in the Downstream knowledge base. "
-            "Fields: id, slug, title, visibility (public/internal), created_on. "
-            "Use this to browse available documentation."
-        ),
-    
-        "fields": "id (str), object (str), title (str), description (str), canonical_topic (str), route (str), scope (str), visibility (str), technicality (str), content_format (str), content (str), metadata.source_document_id (str), metadata.file_path (str), metadata.nav_title (str), metadata.nav_group (str), metadata.group_order (int), metadata.order (int), metadata.is_home (bool), metadata.nav_hidden (bool), metadata.source_visibility (str)",
-        "method": "GET",
-    },
     "api_v1_knowledge_search_list": {
         "path": "/api/v1/knowledge/search/",
         "description": (
@@ -592,37 +459,8 @@ MCP_TOOL_CATALOG = {
         "fields": "document_id (int), slug (str), heading (str), score (float), excerpt (str)",
         "method": "POST",
     },
-    "api_v1_knowledge_get": {
-        "path": "/api/v1/knowledge/{knowledge_document_id}/",
-        "description": "Returns a single knowledge document by ID, including full content.",
-        "fields": "id (int), slug (str), title (str), content (str), visibility (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── LEADS ─────────────────────────────────────────────────────────────────
-
-    "api_v1_leads_list_list": {
-        "path": "/api/v1/leads/list/",
-        "description": (
-            "Admin-only. Returns inbound leads captured from the platform. "
-            "Fields: id, email, name, company, phone, source, created_on, status. "
-            "Use this to list new leads, track lead volume by source, or audit CRM intake."
-        ),
-    
-        "fields": "id (int), email (str), name (str), company (str), phone (str), source (str), status (str), created_on (datetime)",
-        "method": "GET",
-    },
-    "api_v1_leads_meta_webhook_list": {
-        "path": "/api/v1/leads/meta/webhook/",
-        "description": (
-            "Webhook verification endpoint for Meta (Facebook/Instagram) lead forms. "
-            "Not useful for analytics — used for integration setup only."
-        ),
-    
-        "fields": "hub.mode (str), hub.challenge (str), hub.verify_token (str)",
-        "method": "GET",
-    },
 
     # ── MAIN PRODUCTS ─────────────────────────────────────────────────────────
 
@@ -824,17 +662,6 @@ MCP_TOOL_CATALOG = {
         "path": "/api/v1/orders/{id}/",
         "description": "Returns a single order by ID with full details.",
         "fields": "id (int), status (str), created_on (datetime), start_date (date), end_date (date), customer_total (float), seller_total (float), order_group_id (int)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_orders_change_supplier_list": {
-        "path": "/api/v1/orders/{order_id}/change-supplier/",
-        "description": (
-            "Returns eligible alternative suppliers for an existing order. "
-            "Fields: seller_id, seller_name, price, availability, distance_miles. "
-            "Use this to see which suppliers could fulfil a given order if the current one needs to be swapped."
-        ),
-        "fields": "seller_id (int), seller_name (str), price (float), distance_miles (float)",
         "method": "GET",
         "requires_id": True,
     },
@@ -1123,54 +950,6 @@ MCP_TOOL_CATALOG = {
     },
 
     # ── TASKS ─────────────────────────────────────────────────────────────────
-
-    "api_v1_tasks_list": {
-        "path": "/api/v1/tasks/",
-        "description": (
-            "Returns CRM tasks (to-dos) assigned to the authenticated user or their team. "
-            "Fields: id, title, description, status (open/in_progress/done), due_date, "
-            "assigned_to, created_by, related_user_group, created_on. "
-            "Use this to list open tasks, track task completion rates, or audit CRM activity."
-        ),
-    
-        "fields": "object (str), id (str), created_on (str), updated_on (str), title (str), description (str), task_type (str), task_type_label (str), status (str), status_label (str), urgency (str), urgency_label (str), assignee (float), completed_at (str), resolution_note (str), attachments (JSON), comment_count (int), watcher_count (int), is_watching (bool), up_reaction_count (int), down_reaction_count (int), user_reaction (str), created_by.id (str), created_by.full_name (str), created_by.email (str), typed_detail.object (str), typed_detail.task_type (str), typed_detail.product_area (str), typed_detail.reported_environment (str), typed_detail.is_bug (bool), typed_detail.linked_engineering_issue (str), assignee.id (str), assignee.full_name (str), assignee.email (str)",
-        "method": "GET",
-    },
-    "api_v1_tasks_get": {
-        "path": "/api/v1/tasks/{id}/",
-        "description": "Returns a single task by ID.",
-        "fields": "id (int), title (str), description (str), status (str), due_date (date), assigned_to_id (int), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_activities_list": {
-        "path": "/api/v1/tasks/{id}/activities/",
-        "description": "Returns the activity log (status changes, edits) for a specific task.",
-        "fields": "id (int), action (str), changed_by (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_attachments_list": {
-        "path": "/api/v1/tasks/{id}/attachments/",
-        "description": "Returns file attachments for a specific task.",
-        "fields": "id (int), file_url (str), filename (str), uploaded_by (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_comments_list": {
-        "path": "/api/v1/tasks/{id}/comments/",
-        "description": "Returns comments on a specific task.",
-        "fields": "id (int), content (str), author_id (int), author_name (str), created_on (datetime)",
-        "method": "GET",
-        "requires_id": True,
-    },
-    "api_v1_tasks_watchers_list": {
-        "path": "/api/v1/tasks/{id}/watchers/",
-        "description": "Returns users watching a specific task for notifications.",
-        "fields": "id (int), user_id (int), user_name (str), email (str)",
-        "method": "GET",
-        "requires_id": True,
-    },
 
     # ── TIME SLOTS ────────────────────────────────────────────────────────────
 
@@ -1642,6 +1421,37 @@ MCP_TOOL_CATALOG = {
         "fields": "supplier_count_nearby (int), average_price (float), price_range.min (float), price_range.max (float), competitive_index (float)",
         "method": "POST",
     },
+    # ── IMPERSONATION ─────────────────────────────────────────────────────────
+
+    "impersonation_start": {
+        "path": None,
+        "description": (
+            "Start impersonating a specific user by UUID. "
+            "All subsequent API calls will be scoped to that user's data. "
+            "Use when switching context to act on behalf of a specific user."
+        ),
+        "fields": "",
+        "method": "POST",
+    },
+    "impersonation_end": {
+        "path": None,
+        "description": (
+            "Stop impersonating the current user and revert to normal authentication. "
+            "Use after finishing work scoped to an impersonated user."
+        ),
+        "fields": "",
+        "method": "POST",
+    },
+    "impersonation_status": {
+        "path": None,
+        "description": (
+            "Check whether impersonation is currently active and which user is being impersonated. "
+            "Use when you need to know the current impersonation state."
+        ),
+        "fields": "is_active (bool), user_id (str)",
+        "method": "GET",
+    },
+
 }
 
 
