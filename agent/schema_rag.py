@@ -74,8 +74,10 @@ def build_tools_index():
     for tool_name, info in MCP_TOOL_CATALOG.items():
         if tool_name in existing:
             continue
-        # embed: tool name + path + description together for richer matching
+        # embed: tool name + path + description + filters for richer matching
         text = f"Tool: {tool_name}\nPath: {info['path']}\nDescription: {info['description']}"
+        if info.get("filters"):
+            text += f"\nFilters: {info['filters']}"
         docs.append(text)
         ids.append(tool_name)
         metas.append({"tool": tool_name, "path": info["path"] or ""})
