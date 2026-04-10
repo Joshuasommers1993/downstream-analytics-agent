@@ -23,6 +23,7 @@ from rich.text import Text
 from agent.state import AgentState
 from agent.schema_rag import get_relevant_schema
 from agent.tool_selector import get_relevant_tools
+from agent.prompt_builder import format_tool_block
 
 load_dotenv()
 
@@ -170,15 +171,6 @@ def _current_sentence(state: AgentState) -> str:
     return ""
 
 
-def _format_tool_block(name: str, info: dict) -> str:
-    """Format one tool entry for the reasoning prompt (description + filters + CSV fields)."""
-    lines = [f"  {name}", f"    -> {info['description']}"]
-    if info.get("filters"):
-        lines.append(f"    -> Filters: {info['filters']}")
-    if info.get("fields"):
-        lines.append(f"    -> CSV columns: {info['fields']}")
-    return "\n".join(lines)
-
 
 # ─────────────────────────────────────────────
 # NODE 1 — REASONING AGENT
@@ -201,51 +193,6 @@ def reasoning_node(state: AgentState) -> AgentState:
             elif stripped.startswith("->"):
                 console.print(f"[dim]       {stripped}[/]")
 
-        # Previous Stage 1 flow kept for reference, but intentionally disabled.
-        # console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
-        #
-        # candidates = get_relevant_tools(state["question"], top_k=8)
-        #
-        # selection_prompt = f"""
-        # You are a tool selector. Given an analytics question and a list of candidate MCP tools,
-        # choose only the tools actually needed to answer the question.
-        #
-        # Rules:
-        # - Read each tool description carefully
-        # - Select only tools whose data directly answers the question
-        # - Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
-        # - Output a JSON array of tool names only, nothing else
-        # - If multiple fetches are needed (e.g. orders + users), include all required tools
-        #
-        # CANDIDATE TOOLS:
-        # {candidates}
-        #
-        # Question: {state["question"]}
-        #
-        # Output JSON array of selected tool names only:
-        # """.strip()
-        #
-        # sel_response = llm_mini.invoke(selection_prompt)
-        # sel_raw = sel_response.content.strip()
-        # if sel_raw.startswith("```"):
-        #     sel_raw = sel_raw.split("```")[1]
-        #     if sel_raw.startswith("json"):
-        #         sel_raw = sel_raw[4:]
-        # sel_raw = sel_raw.strip()
-        #
-        # try:
-        #     selected_tools = json.loads(sel_raw)
-        # except Exception:
-        #     selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
-        #
-        # console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
-        #
-        # from agent.mcp_catalog import MCP_TOOL_CATALOG
-        # focused_tools = "\n".join(
-        #     _format_tool_block(t, MCP_TOOL_CATALOG[t])
-        #     for t in selected_tools if t in MCP_TOOL_CATALOG
-        # ) or candidates  # fallback to full candidates if selection fails
-
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
 
@@ -262,6 +209,11 @@ Rules:
   * Use each tool's "Filters:" list — only pass params the tool actually supports
   * Dates use ISO format YYYY-MM-DD. Today is 2026-04-09.
   * Filtering server-side is MUCH faster than downloading all rows and filtering in SQL — always prefer it
+  * You can reference a field from a previous FETCH result as a filter value using FETCH_N.field_name
+    - Example: "FETCH: api_v1_user_groups_list id=FETCH_0.user_group"
+    - Example: "FETCH: api_v1_users_list user_group=FETCH_0.user_group"
+    - The field must exist in that FETCH step's listed columns
+    - This reads the first row's value from that column at runtime — use only for scalar FK fields
 - COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
   * Use read_csv_auto('FETCH_N') where N = 0-indexed position in the temp_files list
     - FETCH_0 = result of the 1st FETCH step
@@ -384,6 +336,24 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         if "=" in part:
             k, v = part.split("=", 1)
             api_params[k] = v
+
+    # Resolve FETCH_N.field_name references in filter values
+    for k, v in list(api_params.items()):
+        if v.startswith("FETCH_") and "." in v:
+            ref_part, col = v.split(".", 1)
+            ref_idx_str = ref_part[len("FETCH_"):]
+            if ref_idx_str.isdigit():
+                ref_idx = int(ref_idx_str)
+                if ref_idx < len(state["temp_files"]):
+                    ref_df = pd.read_csv(state["temp_files"][ref_idx], nrows=1)
+                    if col in ref_df.columns:
+                        resolved = str(ref_df[col].iloc[0])
+                        console.print(f"[green]  → Resolved {v} → {resolved}[/]")
+                        api_params[k] = resolved
+                    else:
+                        console.print(f"[yellow]  → Warning: column '{col}' not found in FETCH_{ref_idx}[/]")
+                else:
+                    console.print(f"[yellow]  → Warning: FETCH_{ref_idx} not yet available[/]")
 
     from agent.mcp_catalog import MCP_TOOL_CATALOG
     tool_info = MCP_TOOL_CATALOG.get(tool_name)
