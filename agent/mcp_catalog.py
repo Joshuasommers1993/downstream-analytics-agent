@@ -621,7 +621,7 @@ MCP_TOOL_CATALOG = {
             "seller_location, price, created_on, submitted_on. "
             "Use this only from the supplier side to see their own delivery schedule or incoming order queue."
         ),
-        "filters": "id, order_group, status, code, seller_location, seller, product_category, on_rent, tab, order_type, service_date_after, service_date_before, assignment, search",
+        "filters": "id, order_group, status, code, seller_location, seller, product_category, on_rent, tab, order_type, service_date_after, service_date_before, assignment, search, allow_all",
         "fields": "id (str), created_on (str), updated_on (str), code (str), start_date (str), end_date (str), submitted_on (str), accepted_on (str), completed_on (str), status (str), order_type (str), schedule_window (str), sent_auto_renewal_message (bool), disposal_location (str), order_group (str), main_product (str), seller (str), account_owner (str), submitted_by (str), created_by (str), price (float)",
         "method": "GET",
     },
@@ -839,7 +839,7 @@ MCP_TOOL_CATALOG = {
             "Use this to see which products a specific location offers, compare pricing across suppliers, "
             "or count active product listings per market."
         ),
-        "filters": "id, seller, seller_product, product, main_product_category, main_product, seller_location, search, status",
+        "filters": "id, seller, seller_product, product, main_product_category, main_product, seller_location, search, status, allow_all",
         "fields": "id (str), seller_product (str), seller_location (str), quote (str), service (float), material (float), rental (float), rental_multi_step (str), service_times_per_week (str), created_by (str), updated_by (str), is_complete (bool), created_on (str), updated_on (str), is_deleted (bool), active (bool), needs_approval (bool), total_inventory (str), min_price (str), max_price (str), service_radius (float), service_area_polygon (str), delivery_fee (float), removal_fee (float), fuel_environmental_markup (str), allows_pick_up (bool), winterization_fee (str), rental_one_step.id (str), rental_one_step.created_on (str), rental_one_step.updated_on (str), rental_one_step.is_deleted (str), rental_one_step.rate (float), rental_one_step.created_by (str), rental_one_step.updated_by (str), rental_one_step.seller_product_seller_location (str), rental_one_step (float), service.id (str), service.created_on (str), service.updated_on (str), service.is_deleted (str), service.price_per_mile (float), service.flat_rate_price (float), service.created_by (str), service.updated_by (str), service.seller_product_seller_location (str), material.id (str), material.waste_types (JSON), material.created_on (str), material.updated_on (str), material.is_deleted (str), material.created_by (str), material.updated_by (str), material.seller_product_seller_location (str), rental.id (str), rental.created_on (str), rental.updated_on (str), rental.is_deleted (str), rental.included_days (float), rental.price_per_day_included (float), rental.price_per_day_additional (float), rental.created_by (str), rental.updated_by (str), rental.seller_product_seller_location (str)",
         "method": "GET",
     },
@@ -874,7 +874,7 @@ MCP_TOOL_CATALOG = {
             "or analyze product coverage per supplier."
         ),
     
-        "filters": "seller, product",
+        "filters": "seller, product, allow_all",
         "fields": "id (str), seller (str), product (str), created_by (str), updated_by (str), created_on (str), updated_on (str), is_deleted (bool), active (bool)",
         "method": "GET",
     },
