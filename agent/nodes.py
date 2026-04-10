@@ -273,6 +273,11 @@ Rules:
   * Use each tool's "Filters:" list — only pass params the tool actually supports
   * Dates use ISO format YYYY-MM-DD. Today is 2026-04-09.
   * Filtering server-side is MUCH faster than downloading all rows and filtering in SQL — always prefer it
+  * You can reference a field from a previous FETCH result as a filter value using FETCH_N.field_name
+    - Example: "FETCH: api_v1_user_groups_list id=FETCH_0.user_group"
+    - Example: "FETCH: api_v1_users_list user_group=FETCH_0.user_group"
+    - The field must exist in that FETCH step's listed columns
+    - This reads the first row's value from that column at runtime — use only for scalar FK fields
 - COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
   * Use read_csv_auto('FETCH_N') where N = 0-indexed position in the temp_files list
     - FETCH_0 = result of the 1st FETCH step
@@ -395,6 +400,24 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         if "=" in part:
             k, v = part.split("=", 1)
             api_params[k] = v
+
+    # Resolve FETCH_N.field_name references in filter values
+    for k, v in list(api_params.items()):
+        if v.startswith("FETCH_") and "." in v:
+            ref_part, col = v.split(".", 1)
+            ref_idx_str = ref_part[len("FETCH_"):]
+            if ref_idx_str.isdigit():
+                ref_idx = int(ref_idx_str)
+                if ref_idx < len(state["temp_files"]):
+                    ref_df = pd.read_csv(state["temp_files"][ref_idx], nrows=1)
+                    if col in ref_df.columns:
+                        resolved = str(ref_df[col].iloc[0])
+                        console.print(f"[green]  → Resolved {v} → {resolved}[/]")
+                        api_params[k] = resolved
+                    else:
+                        console.print(f"[yellow]  → Warning: column '{col}' not found in FETCH_{ref_idx}[/]")
+                else:
+                    console.print(f"[yellow]  → Warning: FETCH_{ref_idx} not yet available[/]")
 
     from agent.mcp_catalog import MCP_TOOL_CATALOG
     tool_info = MCP_TOOL_CATALOG.get(tool_name)
