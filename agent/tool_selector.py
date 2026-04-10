@@ -56,14 +56,9 @@ def get_relevant_tools(question: str, top_k: int = 8) -> str:
     if not merged:
         return rag_result  # full fallback
 
-    lines = []
-    for name in merged:
-        desc = MCP_TOOL_CATALOG[name]["description"]
-        fields = MCP_TOOL_CATALOG[name].get("fields", "")
-        lines.append(f"  {name}\n    -> {desc}")
-        # if fields:
-        #     lines.append(f"    -> CSV columns: {fields}")
+    from agent.prompt_builder import format_tool_block
 
+    lines = [format_tool_block(name, MCP_TOOL_CATALOG[name]) for name in merged]
     return "\n".join(lines)
 
 

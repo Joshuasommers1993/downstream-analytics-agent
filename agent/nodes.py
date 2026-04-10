@@ -23,7 +23,7 @@ from rich.text import Text
 from agent.state import AgentState
 from agent.schema_rag import get_relevant_schema
 from agent.tool_selector import get_relevant_tools
-from agent.api_fields import API_FIELDS
+from agent.prompt_builder import format_tool_block
 
 load_dotenv()
 
@@ -171,25 +171,6 @@ def _current_sentence(state: AgentState) -> str:
     return ""
 
 
-def _format_tool_block(name: str, info: dict) -> str:
-    """Format one tool entry for the reasoning prompt (description + filters + CSV fields)."""
-    lines = [f"  {name}", f"    -> {info['description']}"]
-    if info.get("filters"):
-        lines.append(f"    -> Filters: {info['filters']}")
-
-    fields = API_FIELDS.get(name)
-    if fields:
-        # Group fields by source DB table so relationships are explicit
-        by_table: dict[str, list[str]] = {}
-        for field_name, source_table in fields.items():
-            by_table.setdefault(source_table or "?", []).append(field_name)
-        for table, cols in by_table.items():
-            lines.append(f"    -> [{table}]: {', '.join(cols)}")
-    elif info.get("fields"):
-        lines.append(f"    -> CSV columns: {info['fields']}")
-
-    return "\n".join(lines)
-
 
 # ─────────────────────────────────────────────
 # NODE 1 — REASONING AGENT
@@ -211,51 +192,6 @@ def reasoning_node(state: AgentState) -> AgentState:
                 console.print(f"[blue]     {stripped}[/]")
             elif stripped.startswith("->"):
                 console.print(f"[dim]       {stripped}[/]")
-
-        # Previous Stage 1 flow kept for reference, but intentionally disabled.
-        # console.print("[blue]  → Stage 1: selecting tools from RAG candidates...[/]")
-        #
-        # candidates = get_relevant_tools(state["question"], top_k=8)
-        #
-        # selection_prompt = f"""
-        # You are a tool selector. Given an analytics question and a list of candidate MCP tools,
-        # choose only the tools actually needed to answer the question.
-        #
-        # Rules:
-        # - Read each tool description carefully
-        # - Select only tools whose data directly answers the question
-        # - Prefer pre-computed analytics endpoints (insight_hub) over raw data endpoints when available
-        # - Output a JSON array of tool names only, nothing else
-        # - If multiple fetches are needed (e.g. orders + users), include all required tools
-        #
-        # CANDIDATE TOOLS:
-        # {candidates}
-        #
-        # Question: {state["question"]}
-        #
-        # Output JSON array of selected tool names only:
-        # """.strip()
-        #
-        # sel_response = llm_mini.invoke(selection_prompt)
-        # sel_raw = sel_response.content.strip()
-        # if sel_raw.startswith("```"):
-        #     sel_raw = sel_raw.split("```")[1]
-        #     if sel_raw.startswith("json"):
-        #         sel_raw = sel_raw[4:]
-        # sel_raw = sel_raw.strip()
-        #
-        # try:
-        #     selected_tools = json.loads(sel_raw)
-        # except Exception:
-        #     selected_tools = [t.strip() for t in sel_raw.splitlines() if t.strip()]
-        #
-        # console.print(f"[blue]  → Selected tools: {selected_tools}[/]")
-        #
-        # from agent.mcp_catalog import MCP_TOOL_CATALOG
-        # focused_tools = "\n".join(
-        #     _format_tool_block(t, MCP_TOOL_CATALOG[t])
-        #     for t in selected_tools if t in MCP_TOOL_CATALOG
-        # ) or candidates  # fallback to full candidates if selection fails
 
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
