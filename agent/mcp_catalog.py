@@ -15,10 +15,10 @@ MCP_TOOL_CATALOG = {
             "Net New GMV (first-time customers), Expansion GMV (returning customers), and Backlog GMV (scheduled/pipeline orders). "
             "Summary fields: net_new_gmv, expansion_gmv, backlog_gmv, total_gmv, net_new_accounts, expansion_accounts, backlog_orders. "
             "Also returns monthly_trend array with month + gmv per month. "
-            "Filters: start_date, end_date, rep_id, team_id, industry, company_size. "
             "Use this for revenue attainment vs target, new vs returning customer revenue split, pipeline value, "
             "monthly GMV trend, or sales territory performance."
         ),
+        "filters": "start_date, end_date, rep_id, team_id, industry, company_size",
         "fields": "month (str), gmv (float)",
         "method": "GET",
     },
@@ -29,10 +29,10 @@ MCP_TOOL_CATALOG = {
             "Summary fields: net_new (new customers), churned (lost customers), retained, net_growth. "
             "Also returns net_new_accounts list (id, name, first_order_date), churned_accounts list (id, name, last_order_date), "
             "and monthly_trend with net_new per month. "
-            "Filters: start_date, end_date. "
             "Use this for customer acquisition rate, churn rate, net customer growth, retention analysis, "
             "or to identify which specific accounts were won or lost in a period."
         ),
+        "filters": "start_date, end_date",
         "fields": "id (str), name (str), first_order_date (str), last_order_date (str)",
         "method": "GET",
     },
@@ -43,10 +43,10 @@ MCP_TOOL_CATALOG = {
             "Returns commission_rate_percent, summary (total_commission_eligible, total_commission, total_in_cart, total_scheduled), "
             "reps array (rep_id, rep_name, commission_eligible, commission, in_cart, scheduled), "
             "and monthly_trend (month, total commission). "
-            "Filters: month (YYYY-MM format). "
             "Use this for sales rep compensation analysis, commission payout totals, "
             "or to see how much GMV is in-cart vs scheduled vs already completed for commission purposes."
         ),
+        "filters": "month",
         "fields": "rep_id (str), rep_name (str), commission_eligible (float), commission (float), in_cart (float), scheduled (float)",
     },
     "api_insight_hub_customer_spend_mom_list": {
@@ -55,11 +55,11 @@ MCP_TOOL_CATALOG = {
             "Pre-computed month-over-month spend breakdown by customer (user group / account). "
             "Returns customers array (user_group_id, user_group_name, month, spend) "
             "and monthly_totals array (month, total_spend). "
-            "Filters: start_date, end_date, user_group_id. "
             "Use this for customer spend trends, top-spending accounts by month, "
             "spend concentration (which customers drive most revenue), "
             "or to identify accounts with declining or growing spend over time."
         ),
+        "filters": "start_date, end_date, user_group_id",
         "fields": "user_group_id (str), user_group_name (str), month (str), spend (float)",
         "method": "GET",
     },
@@ -68,11 +68,11 @@ MCP_TOOL_CATALOG = {
         "description": (
             "Sales cycle speed metric — how many days from first email outreach to first order. "
             "Returns average_days (mean days), total_conversions, and details per account. "
-            "Filters: start_date, end_date. "
             "Use this for outreach-to-order speed, sales cycle length, or email response latency. "
             "Not suitable for funnel stage drop-off or cart-to-order rate — use api_insight_hub_sales_funnel_list for those."
         ),
     
+        "filters": "start_date, end_date",
         "fields": "average_days (float), total_conversions (int)",
         "method": "GET",
     },
@@ -81,10 +81,10 @@ MCP_TOOL_CATALOG = {
         "description": (
             "Pre-computed gross merchandise value (GMV) aggregated by US state for a date range. "
             "Returns states array with: state (two-letter code), gmv (total order value), order_count. "
-            "Filters: start_date, end_date. "
             "Use this for geographic revenue distribution, top states by GMV, "
             "state-level market penetration, or regional sales comparison."
         ),
+        "filters": "start_date, end_date",
         "fields": "state (str), gmv (float), order_count (int)",
         "method": "GET",
     },
@@ -95,10 +95,10 @@ MCP_TOOL_CATALOG = {
             "Returns months array with: month (YYYY-MM), gmv (total customer spend), supplier_cost (total paid to sellers), "
             "net_revenue (Downstream margin = gmv - supplier_cost), take_rate_percent (net_revenue / gmv * 100), "
             "aov (average order value), order_count. "
-            "Filters: start_date, end_date. "
             "Use this for revenue trends, platform margin trends, average order value trends, "
             "order volume trends, or MoM growth rate calculations."
         ),
+        "filters": "start_date, end_date",
         "fields": "month (str), gmv (float), supplier_cost (float), net_revenue (float), take_rate_percent (float), aov (float), order_count (int)",
         "method": "GET",
     },
@@ -109,8 +109,8 @@ MCP_TOOL_CATALOG = {
             "Top waste types ranked by how many orders were placed for each. "
             "Which material categories are ordered most. Frequency and share of each service type. "
             "Pre-computed: category name, order_count, percent of total orders, total_orders. "
-            "Filters: start_date, end_date."
         ),
+        "filters": "start_date, end_date",
         "fields": "category (str), order_count (int), percent (float)",
         "method": "GET",
     },
@@ -121,10 +121,10 @@ MCP_TOOL_CATALOG = {
             "Returns rows array with: rep_id, rep_name, month (YYYY-MM), "
             "gmv_target, gmv_actual, attainment_percent (gmv_actual / gmv_target * 100), "
             "new_accounts_target, new_accounts_actual, orders_target, orders_actual. "
-            "Filters: start_date, end_date, rep_id. "
             "Use this for sales rep performance review, quota attainment ranking, "
             "which reps are hitting or missing targets, or team-level attainment rollup."
         ),
+        "filters": "start_date, end_date, rep_id",
         "fields": "rep_id (str), rep_name (str), month (str), gmv_target (float), gmv_actual (float), attainment_percent (float), new_accounts_target (int), new_accounts_actual (int), orders_target (int), orders_actual (int)",
         "method": "GET",
     },
@@ -147,8 +147,8 @@ MCP_TOOL_CATALOG = {
             "Cart-to-quote rate, quote-to-close rate, overall win rate, which stage loses the most deals. "
             "Pre-computed funnel with stage-by-stage counts and GMV: cart, quote, order, invoice, payment. "
             "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
-            "Filters: start_date, end_date."
         ),
+        "filters": "start_date, end_date",
         "fields": "stage (str), count (int), gmv (float)",
     },
     "api_insight_hub_spend_by_product_list": {
@@ -158,9 +158,9 @@ MCP_TOOL_CATALOG = {
             "Best tool for: which product categories generate the most revenue, average order value by product type, "
             "top products by GMV, product revenue ranking, product-level AOV comparison, revenue breakdown by service type. "
             "Returns products array with: main_product_name, gmv (total revenue), order_count, aov (average order value). "
-            "Filters: start_date, end_date, user_group_id. "
             "Use this whenever the question asks about revenue, GMV, or AOV broken down by product or service type."
         ),
+        "filters": "start_date, end_date, user_group_id",
         "fields": "main_product_name (str), gmv (float), order_count (int), aov (float)",
         "method": "GET",
     },
@@ -169,10 +169,10 @@ MCP_TOOL_CATALOG = {
         "description": (
             "Pre-computed customer spend aggregated by supplier (seller). "
             "Returns suppliers array with: seller_id, seller_name, gmv (total spend routed to this seller). "
-            "Filters: start_date, end_date, user_group_id. "
             "Use this for supplier concentration analysis, top sellers by GMV, "
             "how much spend goes to each vendor, or supplier diversification metrics."
         ),
+        "filters": "start_date, end_date, user_group_id",
         "fields": "seller_id (str), seller_name (str), gmv (float)",
         "method": "GET",
     },
@@ -183,8 +183,8 @@ MCP_TOOL_CATALOG = {
             "Net revenue and take rate percent per rep per month. Annual/monthly platform margin trend. "
             "Returns rows: rep_id, rep_name, month (YYYY-MM), customer_total (GMV), "
             "seller_total (supplier cost), net_revenue, take_rate_percent. "
-            "Filters: start_date, end_date, rep_id."
         ),
+        "filters": "start_date, end_date, rep_id",
         "fields": "rep_id (str), rep_name (str), month (str), customer_total (float), seller_total (float), net_revenue (float), take_rate_percent (float)",
         "method": "GET",
     },
@@ -278,10 +278,10 @@ MCP_TOOL_CATALOG = {
         "description": (
             "Returns all advertisements (promotional banners/placements) configured in the platform. "
             "Fields: id, title, image_url, target_url, seller, placement, is_active, start_date, end_date. "
-            "Filters: seller_id, placement, is_active. "
             "Use this to list active promotions, see which sellers are advertising, or audit ad inventory."
         ),
     
+        "filters": "seller_id, placement, is_active",
         "fields": "id (str), text (str), image (str), background_color (str), text_color (str), object_type (str), object_id (str), sort (int), is_active (bool), start_date (str), end_date (str)",
         "method": "GET",
     },
@@ -394,10 +394,10 @@ MCP_TOOL_CATALOG = {
             "Returns insurance policies on file for accounts. "
             "Fields: id, account, account_type (seller/buyer), type (general_liability/equipment_liability/umbrella), "
             "status (valid/expired/pending), effective_date, expiration_date, insurer, coverage_amount. "
-            "Filters: account, account_type, type, status. "
             "Use this to check insurance compliance, find expired policies, or count accounts with valid coverage."
         ),
     
+        "filters": "account, account_type, type, status",
         "fields": "id (str), object (str), account (str), account_type (str), type (str), status (str), effective_at (int), expires_at (int), insurance_provider (str), policy_number (str), is_valid (bool), invalid_reasons (JSON), deactivated_at (str), deactivation_reason (str), created (int), coverage.each_occurrence_limit (float), coverage.general_aggregate_limit (float), coverage.additional_insured (bool), coverage.waiver_of_subrogation (bool), document.file_url (str), document.ocr_status (str), coverage.equipment_coverage_limit (float)",
         "method": "GET",
     },
@@ -419,7 +419,6 @@ MCP_TOOL_CATALOG = {
             "Fields: id, number, status (open/paid/void/past_due), total, amount_due, amount_paid, "
             "amount_remaining, due_date, created_on, updated_on, user_address, order_group, user_group. "
             "Supports ordering by: created_on, due_date, total, amount_due, amount_paid, status. "
-            "Filters: status, user_address_id, order_group_id, user_group_id. "
             "Use this for invoice aging analysis, outstanding balance tracking, payment collection metrics, "
             "or to list unpaid invoices for an account."
         ),
@@ -491,10 +490,10 @@ MCP_TOOL_CATALOG = {
             "Returns top-level product category groups that bundle multiple categories. "
             "Fields: id, name, slug, icon, sort, main_product_categories (nested list). "
             "Examples: Waste Removal, Site Services, Storage. "
-            "Filters: seller_location (limits to products available at that location), allows_pickup. "
             "Use this for top-level product taxonomy, marketplace navigation, or filtering available services."
         ),
     
+        "filters": "seller_location, allows_pickup",
         "fields": "id (str), main_product_categories (JSON), created_on (str), updated_on (str), is_deleted (bool), name (str), sort (int), icon (str), slug (str), created_by (str), updated_by (str)",
         "method": "GET",
     },
@@ -561,7 +560,6 @@ MCP_TOOL_CATALOG = {
             "Fields: id, user_address (job site), seller, main_product, status, start_date, end_date, "
             "created_on, updated_on, total_value, order_count. "
             "Ordering: created_on, updated_on, start_date, end_date (default: -start_date). "
-            "Filters: status, user_address_id, seller_id, main_product_id, created_on__gte, created_on__lte, start_date__gte, start_date__lte. "
             "Use this to count bookings by date, track booking volume trends, "
             "find bookings by job site, or calculate total booking value."
         ),
@@ -735,10 +733,10 @@ MCP_TOOL_CATALOG = {
         "description": (
             "Returns public-facing SEO location pages for Downstream's US city coverage. "
             "Fields: state_slug, city_slug, state_name, city_name, is_indexed, seller_location_count, updated_at. "
-            "Filters: state_slug, is_indexed. "
             "Use this to list all cities Downstream serves, count coverage by state, "
             "or find which markets have seller presence."
         ),
+        "filters": "state_slug, is_indexed",
         "fields": "location.stateSlug (str), location.stateName (str), location.citySlug (str), location.cityName (str), location.county (str), location.lat (float), location.lng (float), coverage.isServiced (bool), coverage.coverageScore (float), coverage.supplierCount (int), coverage.listingCount (int), coverage.topCategories (JSON), seo.title (str), seo.description (str), seo.canonicalPath (str), seo.indexable (bool), seo.faqItems (JSON), content.heroCopy (str), content.benefits (JSON), content.serviceHighlights (JSON), content.trustSignals (JSON), internalLinks.nearbyCities (JSON), internalLinks.statePagePath (str), meta.updatedAt (str)",
         "method": "GET",
     },
@@ -811,7 +809,6 @@ MCP_TOOL_CATALOG = {
             "state and city fields live here, not on the Seller entity. "
             "Fields: id, seller_id, name, address, city, state, zip_code, latitude, longitude, "
             "is_active, service_radius_miles, open_hours, created_on. "
-            "Filters: seller_id, city, state, is_active. "
             "Pass allow_all=true to see all locations platform-wide."
         ),
         "filters": "id, seller, allow_all, search, latitude, longitude, radius, zoom_level, open, pickup, exclude_ds, product_category, active_only, status",
@@ -870,7 +867,6 @@ MCP_TOOL_CATALOG = {
             "Returns seller products (a seller's specific product offerings, mapped to main products). "
             "A SellerProduct links a Seller to a MainProduct with seller-specific configuration. "
             "Fields: id, seller_id, main_product_id, main_product_name, name, is_active, created_on. "
-            "Filters: seller_id, main_product_id, is_active. "
             "Use this to list what products a seller offers, find sellers that offer a specific product, "
             "or analyze product coverage per supplier."
         ),
@@ -917,7 +913,6 @@ MCP_TOOL_CATALOG = {
             "A Seller is the company entity; geographic fields (city, state) are on SellerLocation, not here. "
             "NOT suitable for state/city breakdowns — use api_v1_seller_locations_list for geography. "
             "Fields: id, name, slug, type, website, phone, email, is_active, open_days, created_on, location_count. "
-            "Filters: id, is_active. "
             "Use this to list all suppliers by name, count total active sellers, "
             "look up a seller by name, or get seller IDs for joining with other data."
         ),
@@ -1146,7 +1141,6 @@ MCP_TOOL_CATALOG = {
             "Fields: id, email, first_name, last_name, type (ADMIN/MEMBER/VIEW_ONLY), "
             "is_onboarded, is_active, is_archived, timezone, role, user_group (id + name). "
             "Expandable: role, user_group.seller, user_group.account_owner, user_group.users, etc. "
-            "Filters: user_group_id, type, is_active, is_archived. "
             "Use this to count users per account, list users by type, "
             "find which accounts have onboarded users, or get user IDs for cohort analysis."
         ),
