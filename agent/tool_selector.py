@@ -61,8 +61,8 @@ def get_relevant_tools(question: str, top_k: int = 8) -> str:
         desc = MCP_TOOL_CATALOG[name]["description"]
         fields = MCP_TOOL_CATALOG[name].get("fields", "")
         lines.append(f"  {name}\n    -> {desc}")
-        if fields:
-            lines.append(f"    -> CSV columns: {fields}")
+        # if fields:
+        #     lines.append(f"    -> CSV columns: {fields}")
 
     return "\n".join(lines)
 

@@ -171,9 +171,11 @@ def _current_sentence(state: AgentState) -> str:
 
 
 def _format_tool_block(name: str, info: dict) -> str:
-    """Format one tool entry for the reasoning prompt (description + CSV fields if available)."""
+    """Format one tool entry for the reasoning prompt (description + filters + CSV fields)."""
     lines = [f"  {name}", f"    -> {info['description']}"]
-    if "fields" in info:
+    if info.get("filters"):
+        lines.append(f"    -> Filters: {info['filters']}")
+    if info.get("fields"):
         lines.append(f"    -> CSV columns: {info['fields']}")
     return "\n".join(lines)
 
@@ -252,9 +254,14 @@ You are a reasoning agent. Decompose this analytics question into an ordered exe
 
 Rules:
 - Each step is either FETCH or COMPUTE
-- FETCH steps: "FETCH: <exact_tool_name> [optional filter description]"
+- FETCH steps: "FETCH: <exact_tool_name> [key=value ...]"
   * Use the exact tool name from the list below
-  * Mention any filters (e.g. status=SCHEDULED, start_date=6 months ago)
+  * Pass API-supported filters as key=value pairs directly after the tool name
+  * Example: "FETCH: api_v1_orders_list status=COMPLETE created_on__gte=2024-01-01"
+  * Example: "FETCH: api_v1_seller_locations_list is_active=true"
+  * Use each tool's "Filters:" list — only pass params the tool actually supports
+  * Dates use ISO format YYYY-MM-DD. Today is 2026-04-09.
+  * Filtering server-side is MUCH faster than downloading all rows and filtering in SQL — always prefer it
 - COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
   * Use read_csv_auto('FETCH_N') where N = 0-indexed position in the temp_files list
     - FETCH_0 = result of the 1st FETCH step
@@ -368,22 +375,32 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     sentence = _current_sentence(state)
     _print_step(f"📥  FETCH  [step {state['current_idx']+1}]", "green", sentence)
 
-    # Extract tool name from "FETCH: <tool_name> [optional description]"
-    tool_name = sentence[len("FETCH:"):].strip().split()[0]
+    # Extract tool name and optional key=value API filters from FETCH sentence
+    # Format: "FETCH: tool_name key=value key2=value2"
+    parts = sentence[len("FETCH:"):].strip().split()
+    tool_name = parts[0]
+    api_params = {}
+    for part in parts[1:]:
+        if "=" in part:
+            k, v = part.split("=", 1)
+            api_params[k] = v
 
     from agent.mcp_catalog import MCP_TOOL_CATALOG
     tool_info = MCP_TOOL_CATALOG.get(tool_name)
     if not tool_info:
         return {**state, "error": f"Unknown tool: {tool_name}"}
 
+    if api_params:
+        console.print(f"[green]  → API filters: {api_params}[/]")
+
     is_readonly = tool_info.get("method", "GET").upper() == "GET"
 
     if is_readonly:
-        # Read-only: call Downstream API directly (fast, no size limits)
+        # Read-only: call Downstream API directly with optional server-side filters
         path = tool_info["path"]
         console.print(f"[green]  → Direct API: GET {_API_BASE}{path}[/]")
         try:
-            all_rows = fetch_all_pages(path)
+            all_rows = fetch_all_pages(path, params=api_params)
         except Exception as e:
             return {**state, "error": f"API fetch error ({path}): {e}"}
     else:
