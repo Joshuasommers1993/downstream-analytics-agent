@@ -18,7 +18,7 @@ MCP_TOOL_CATALOG = {
             "Use this for revenue attainment vs target, new vs returning customer revenue split, pipeline value, "
             "monthly GMV trend, or sales territory performance."
         ),
-        "filters": "start_date, end_date, rep_id, team_id, industry, company_size",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "month (str), gmv (float)",
         "method": "GET",
     },
@@ -32,7 +32,7 @@ MCP_TOOL_CATALOG = {
             "Use this for customer acquisition rate, churn rate, net customer growth, retention analysis, "
             "or to identify which specific accounts were won or lost in a period."
         ),
-        "filters": "start_date, end_date",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "id (str), name (str), first_order_date (str), last_order_date (str)",
         "method": "GET",
     },
@@ -46,7 +46,7 @@ MCP_TOOL_CATALOG = {
             "Use this for sales rep compensation analysis, commission payout totals, "
             "or to see how much GMV is in-cart vs scheduled vs already completed for commission purposes."
         ),
-        "filters": "month",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "rep_id (str), rep_name (str), commission_eligible (float), commission (float), in_cart (float), scheduled (float)",
     },
     "api_insight_hub_customer_spend_mom_list": {
@@ -59,7 +59,7 @@ MCP_TOOL_CATALOG = {
             "spend concentration (which customers drive most revenue), "
             "or to identify accounts with declining or growing spend over time."
         ),
-        "filters": "start_date, end_date, user_group_id",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "user_group_id (str), user_group_name (str), month (str), spend (float)",
         "method": "GET",
     },
@@ -72,7 +72,7 @@ MCP_TOOL_CATALOG = {
             "Not suitable for funnel stage drop-off or cart-to-order rate — use api_insight_hub_sales_funnel_list for those."
         ),
     
-        "filters": "start_date, end_date",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "average_days (float), total_conversions (int)",
         "method": "GET",
     },
@@ -84,7 +84,7 @@ MCP_TOOL_CATALOG = {
             "Use this for geographic revenue distribution, top states by GMV, "
             "state-level market penetration, or regional sales comparison."
         ),
-        "filters": "start_date, end_date",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "state (str), gmv (float), order_count (int)",
         "method": "GET",
     },
@@ -98,7 +98,7 @@ MCP_TOOL_CATALOG = {
             "Use this for revenue trends, platform margin trends, average order value trends, "
             "order volume trends, or MoM growth rate calculations."
         ),
-        "filters": "start_date, end_date",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "month (str), gmv (float), supplier_cost (float), net_revenue (float), take_rate_percent (float), aov (float), order_count (int)",
         "method": "GET",
     },
@@ -110,7 +110,7 @@ MCP_TOOL_CATALOG = {
             "Which material categories are ordered most. Frequency and share of each service type. "
             "Pre-computed: category name, order_count, percent of total orders, total_orders. "
         ),
-        "filters": "start_date, end_date",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "category (str), order_count (int), percent (float)",
         "method": "GET",
     },
@@ -124,7 +124,7 @@ MCP_TOOL_CATALOG = {
             "Use this for sales rep performance review, quota attainment ranking, "
             "which reps are hitting or missing targets, or team-level attainment rollup."
         ),
-        "filters": "start_date, end_date, rep_id",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "rep_id (str), rep_name (str), month (str), gmv_target (float), gmv_actual (float), attainment_percent (float), new_accounts_target (int), new_accounts_actual (int), orders_target (int), orders_actual (int)",
         "method": "GET",
     },
@@ -137,6 +137,7 @@ MCP_TOOL_CATALOG = {
             "or verify quota coverage across the team."
         ),
     
+        "filters": "rep_id, month",
         "fields": "id (int), rep_id (str), month (str), gmv_target (float), new_accounts_target (int), orders_target (int)",
         "method": "GET",
     },
@@ -148,7 +149,7 @@ MCP_TOOL_CATALOG = {
             "Pre-computed funnel with stage-by-stage counts and GMV: cart, quote, order, invoice, payment. "
             "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
         ),
-        "filters": "start_date, end_date",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "stage (str), count (int), gmv (float)",
     },
     "api_insight_hub_spend_by_product_list": {
@@ -160,7 +161,7 @@ MCP_TOOL_CATALOG = {
             "Returns products array with: main_product_name, gmv (total revenue), order_count, aov (average order value). "
             "Use this whenever the question asks about revenue, GMV, or AOV broken down by product or service type."
         ),
-        "filters": "start_date, end_date, user_group_id",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "main_product_name (str), gmv (float), order_count (int), aov (float)",
         "method": "GET",
     },
@@ -172,7 +173,7 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier concentration analysis, top sellers by GMV, "
             "how much spend goes to each vendor, or supplier diversification metrics."
         ),
-        "filters": "start_date, end_date, user_group_id",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "seller_id (str), seller_name (str), gmv (float)",
         "method": "GET",
     },
@@ -184,7 +185,7 @@ MCP_TOOL_CATALOG = {
             "Returns rows: rep_id, rep_name, month (YYYY-MM), customer_total (GMV), "
             "seller_total (supplier cost), net_revenue, take_rate_percent. "
         ),
-        "filters": "start_date, end_date, rep_id",
+        "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "fields": "rep_id (str), rep_name (str), month (str), customer_total (float), seller_total (float), net_revenue (float), take_rate_percent (float)",
         "method": "GET",
     },
@@ -281,7 +282,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list active promotions, see which sellers are advertising, or audit ad inventory."
         ),
     
-        "filters": "seller_id, placement, is_active",
+        "filters": "id, is_active",
         "fields": "id (str), text (str), image (str), background_color (str), text_color (str), object_type (str), object_id (str), sort (int), is_active (bool), start_date (str), end_date (str)",
         "method": "GET",
     },
@@ -309,6 +310,7 @@ MCP_TOOL_CATALOG = {
             "Use this to get the UUID for a day name when setting or querying open hours."
         ),
     
+        "filters": "id",
         "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), number (int), created_by (str), updated_by (str)",
         "method": "GET",
     },
@@ -397,7 +399,7 @@ MCP_TOOL_CATALOG = {
             "Use this to check insurance compliance, find expired policies, or count accounts with valid coverage."
         ),
     
-        "filters": "account, account_type, type, status",
+        "filters": "account, type, status",
         "fields": "id (str), object (str), account (str), account_type (str), type (str), status (str), effective_at (int), expires_at (int), insurance_provider (str), policy_number (str), is_valid (bool), invalid_reasons (JSON), deactivated_at (str), deactivation_reason (str), created (int), coverage.each_occurrence_limit (float), coverage.general_aggregate_limit (float), coverage.additional_insured (bool), coverage.waiver_of_subrogation (bool), document.file_url (str), document.ocr_status (str), coverage.equipment_coverage_limit (float)",
         "method": "GET",
     },
@@ -493,7 +495,7 @@ MCP_TOOL_CATALOG = {
             "Use this for top-level product taxonomy, marketplace navigation, or filtering available services."
         ),
     
-        "filters": "seller_location, allows_pickup",
+        "filters": "id, name, seller_location, allows_pickup",
         "fields": "id (str), main_product_categories (JSON), created_on (str), updated_on (str), is_deleted (bool), name (str), sort (int), icon (str), slug (str), created_by (str), updated_by (str)",
         "method": "GET",
     },
@@ -549,6 +551,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list documents or files attached to a booking."
         ),
     
+        "filters": "id, order_group",
         "fields": "id (str), order_group (str), file_name (str), file_type (str)",
         "method": "GET",
     },
@@ -736,7 +739,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list all cities Downstream serves, count coverage by state, "
             "or find which markets have seller presence."
         ),
-        "filters": "state_slug, is_indexed",
+        "filters": "state, indexable_only, updated_after",
         "fields": "location.stateSlug (str), location.stateName (str), location.citySlug (str), location.cityName (str), location.county (str), location.lat (float), location.lng (float), coverage.isServiced (bool), coverage.coverageScore (float), coverage.supplierCount (int), coverage.listingCount (int), coverage.topCategories (JSON), seo.title (str), seo.description (str), seo.canonicalPath (str), seo.indexable (bool), seo.faqItems (JSON), content.heroCopy (str), content.benefits (JSON), content.serviceHighlights (JSON), content.trustSignals (JSON), internalLinks.nearbyCities (JSON), internalLinks.statePagePath (str), meta.updatedAt (str)",
         "method": "GET",
     },
@@ -965,6 +968,7 @@ MCP_TOOL_CATALOG = {
             "Use only to get time slot IDs for order creation or display labels in UI."
         ),
     
+        "filters": "id",
         "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), start (str), end (str), created_by (str), updated_by (str)",
         "method": "GET",
     },
@@ -986,6 +990,7 @@ MCP_TOOL_CATALOG = {
             "Use this to get address type IDs for filtering or categorizing job sites."
         ),
     
+        "filters": "id",
         "fields": "id (str), created_on (str), updated_on (str), is_deleted (bool), name (str), sort (int), created_by (str), updated_by (str)",
         "method": "GET",
     },
@@ -1053,6 +1058,7 @@ MCP_TOOL_CATALOG = {
             "Use this to list pending invitations awaiting admin approval."
         ),
     
+        "filters": "allow_all",
         "fields": "id (str), redirect_url (str), updated_by (str), created_by (str), created_on (str), updated_on (str), is_deleted (bool), email (str), phone (str), type (str), first_name (str), last_name (str), status (str), user_group (str), role (str), user.id (str), user.user_id (str), user.phone (str), user.phone_revealed (bool), user.phone_revealed_on (str), user.email (str), user.push_id (str), user.date_joined (str), user.first_name (str), user.last_name (str), user.username (str), user.photo_url (str), user.photo (str), user.identity_verified (bool), user.is_onboarded (bool), user.is_staff (bool), user.is_superuser (bool), user.is_admin (bool), user.is_archived (bool), user.is_active (bool), user.source (str), user.terms_accepted (str), user.type (str), user.last_active (str), user.last_login (str), user.timezone (str), user.send_new_invoice_emails (bool), user.redirect_url (str), user.user_group (str), user.role (str)",
         "method": "GET",
     },
@@ -1145,7 +1151,7 @@ MCP_TOOL_CATALOG = {
             "find which accounts have onboarded users, or get user IDs for cohort analysis."
         ),
     
-        "filters": "id, search, type, has_seller, user_group, user_address",
+        "filters": "id, search, type, has_seller, user_group, user_address, email",
         "fields": "id (str), user_id (str), phone (str), phone_revealed (bool), phone_revealed_on (str), email (str), push_id (str), date_joined (str), first_name (str), last_name (str), username (str), photo_url (str), photo (str), identity_verified (bool), is_onboarded (bool), is_staff (bool), is_superuser (bool), is_admin (bool), is_archived (bool), is_active (bool), source (str), terms_accepted (str), type (str), last_active (str), last_login (str), timezone (str), send_new_invoice_emails (bool), redirect_url (str), user_group (str), role (str)",
         "method": "GET",
     },
