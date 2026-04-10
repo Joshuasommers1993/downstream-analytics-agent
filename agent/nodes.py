@@ -23,6 +23,7 @@ from rich.text import Text
 from agent.state import AgentState
 from agent.schema_rag import get_relevant_schema
 from agent.tool_selector import get_relevant_tools
+from agent.api_fields import API_FIELDS
 
 load_dotenv()
 
@@ -175,8 +176,18 @@ def _format_tool_block(name: str, info: dict) -> str:
     lines = [f"  {name}", f"    -> {info['description']}"]
     if info.get("filters"):
         lines.append(f"    -> Filters: {info['filters']}")
-    if info.get("fields"):
+
+    fields = API_FIELDS.get(name)
+    if fields:
+        # Group fields by source DB table so relationships are explicit
+        by_table: dict[str, list[str]] = {}
+        for field_name, source_table in fields.items():
+            by_table.setdefault(source_table or "?", []).append(field_name)
+        for table, cols in by_table.items():
+            lines.append(f"    -> [{table}]: {', '.join(cols)}")
+    elif info.get("fields"):
         lines.append(f"    -> CSV columns: {info['fields']}")
+
     return "\n".join(lines)
 
 
