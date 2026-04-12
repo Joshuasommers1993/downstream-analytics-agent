@@ -67,7 +67,10 @@ def get_relevant_tools(question: str, top_k: int = 8) -> tuple[str, str]:
     from agent.schema_rag import get_relevant_tools as rag_get
 
     agent_names, agent_reasoning = _ask_agent(question)
-    rag_result = rag_get(question, top_k=top_k)
+    # Use Stage 1 reasoning as RAG query if available — it's richer than the raw question
+    # and uses domain language ("product catalog", "completed orders") that maps better to tool descriptions
+    rag_query = agent_reasoning or question
+    rag_result = rag_get(rag_query, top_k=top_k)
 
     # Parse RAG tool names from its formatted output
     rag_names = [
