@@ -181,20 +181,31 @@ def reasoning_node(state: AgentState) -> AgentState:
     # ── First call: build the full FETCH/COMPUTE plan ─────────────────────────
     if not state["logic_sentences"]:
 
-        # Stage 1: downstream agent selects relevant tools
+        # Stage 1: downstream agent selects relevant tools + emits analytical reasoning
         console.print("[blue]  → Stage 1: asking downstream agent for relevant tools...[/]")
-        focused_tools = get_relevant_tools(state["question"], top_k=8)
+        focused_tools, stage1_reasoning = get_relevant_tools(state["question"], top_k=8)
 
         # Print selected tool names
         for line in focused_tools.splitlines():
             stripped = line.strip()
             if stripped and not stripped.startswith("->"):
                 console.print(f"[blue]     {stripped}[/]")
-            # elif stripped.startswith("->"):
-            #     console.print(f"[dim]       {stripped}[/]")
+
+        if stage1_reasoning:
+            console.print(f"\n[bold blue]  💬 Stage 1 analytical reasoning:[/]")
+            console.print(Panel(stage1_reasoning, style="blue dim", padding=(0, 2)))
 
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
+
+        # Inject Stage 1 analytical reasoning if present — Stage 2 adapts column names
+        reasoning_block = ""
+        if stage1_reasoning:
+            reasoning_block = f"""
+Analytical approach suggested by domain expert (use this logic; adapt column names to match the tool fields listed above):
+{stage1_reasoning}
+
+"""
 
         prompt = f"""
 You are a reasoning agent. Decompose this analytics question into an ordered execution plan.
@@ -234,8 +245,7 @@ Rules:
 
 AVAILABLE MCP TOOLS:
 {focused_tools}
-
-Question: {state["question"]}
+{reasoning_block}Question: {state["question"]}
 
 Output JSON array only:
 """.strip()

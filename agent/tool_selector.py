@@ -23,17 +23,20 @@ TOOL_SELECTOR_MODEL = os.getenv("TOOL_SELECTOR_MODEL", "")
 _MCP_SUFFIX = re.compile(r"_mcp_\w+$")
 
 
-def get_relevant_tools(question: str, top_k: int = 8) -> str:
+def get_relevant_tools(question: str, top_k: int = 8) -> tuple[str, str]:
     """
     Combine downstream agent tool selection with Chroma RAG.
     - Agent provides domain-aware primary tools
     - RAG fills in related/supporting tools the agent may miss
-    Returns a formatted string: tool_name + description.
+
+    Returns (tool_blocks, agent_reasoning):
+      tool_blocks    — formatted string: tool_name + fields + filters
+      agent_reasoning — prose/SQL the Stage 1 agent wrote (may be empty string)
     """
     from agent.mcp_catalog import MCP_TOOL_CATALOG
     from agent.schema_rag import get_relevant_tools as rag_get
 
-    agent_names = _ask_agent(question)
+    agent_names, agent_reasoning = _ask_agent(question)
     rag_result = rag_get(question, top_k=top_k)
 
     # Parse RAG tool names from its formatted output
@@ -54,23 +57,24 @@ def get_relevant_tools(question: str, top_k: int = 8) -> str:
             break
 
     if not merged:
-        return rag_result  # full fallback
+        return rag_result, agent_reasoning  # full fallback
 
     from agent.prompt_builder import format_tool_block
 
     lines = [format_tool_block(name, MCP_TOOL_CATALOG[name]) for name in merged]
-    return "\n".join(lines)
+    return "\n".join(lines), agent_reasoning
 
 
-def _ask_agent(question: str) -> list[str]:
+def _ask_agent(question: str) -> tuple[list[str], str]:
     """
     Ask the tool-selector agent to name the relevant MCP tools without
-    executing them. Parses tool names from the response content.
-    Strips the '_mcp_*' suffix the agent appends (e.g. '_mcp_User').
-    Returns an empty list on any error.
-    """
-    prompt = question
+    executing them. Parses tool names from tool_calls and captures any
+    analytical reasoning from the content field.
 
+    Returns (names, reasoning):
+      names     — list of MCP tool name strings (may be empty)
+      reasoning — prose/SQL from the agent's content field (may be empty string)
+    """
     try:
         response = httpx.post(
             TOOL_SELECTOR_URL,
@@ -80,17 +84,15 @@ def _ask_agent(question: str) -> list[str]:
             },
             json={
                 "model": TOOL_SELECTOR_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
+                "messages": [{"role": "user", "content": question}],
                 "stream": False,
             },
             timeout=30,
         )
         response.raise_for_status()
         message = response.json()["choices"][0]["message"]
-        print(message)
 
         names = []
-
         # Primary: extract tool names from tool_calls (agent actually chose these)
         for tc in message.get("tool_calls") or []:
             fn_name = tc.get("function", {}).get("name", "")
@@ -98,8 +100,9 @@ def _ask_agent(question: str) -> list[str]:
             if clean:
                 names.append(clean)
 
-        return names
+        reasoning = (message.get("content") or "").strip()
+        return names, reasoning
 
     except Exception as e:
         print(f"[tool_selector] Agent call failed: {e}, falling back to RAG")
-        return []
+        return [], ""
