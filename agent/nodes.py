@@ -10,6 +10,7 @@ Architecture (3 active nodes):
 """
 
 import os
+import re
 import json
 import uuid
 import textwrap
@@ -198,11 +199,11 @@ def reasoning_node(state: AgentState) -> AgentState:
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
 
-        # Inject Stage 1 analytical reasoning if present — Stage 2 adapts column names
+        # Inject Stage 1 analytical plan if present — Stage 2 maps intent to actual columns
         reasoning_block = ""
         if stage1_reasoning:
             reasoning_block = f"""
-Analytical approach suggested by domain expert (use this logic; adapt column names to match the tool fields listed above):
+Analytical plan (what to compute — no column names; map intent to actual column names from the tool fields listed above):
 {stage1_reasoning}
 
 """
@@ -259,10 +260,21 @@ Output JSON array only:
                 raw = raw[4:]
         raw = raw.strip()
 
+        # LLM sometimes uses backslash-newline continuation inside JSON strings — strip them
+        raw_clean = re.sub(r'\\\n\s*', ' ', raw)
         try:
-            sentences = json.loads(raw)
+            sentences = json.loads(raw_clean)
         except Exception:
-            sentences = [line.strip() for line in raw.splitlines() if line.strip().startswith(("FETCH:", "COMPUTE:"))]
+            # Fallback: extract quoted or unquoted FETCH/COMPUTE lines
+            sentences = []
+            for line in raw_clean.splitlines():
+                s = line.strip().strip('"').rstrip('",').strip()
+                if s.startswith(("FETCH:", "COMPUTE:")):
+                    sentences.append(s)
+
+        if not sentences:
+            console.print(f"[red]  → Stage 2 returned empty plan — raw response:[/]")
+            console.print(Panel(raw[:500], style="red dim", padding=(0, 2)))
 
         console.print(f"[blue]  → Plan ({len(sentences)} steps):[/]")
         for i, s in enumerate(sentences):
@@ -311,13 +323,19 @@ Error: {state["error"]}
 Already fetched files: {state["temp_files"]}
 
 AVAILABLE MCP TOOLS relevant to this step:
-{get_relevant_tools(current, top_k=5)}
+{get_relevant_tools(current, top_k=5)[0]}
 
 Output only the rephrased sentence (starting with FETCH:):
 """.strip()
 
         response = llm.invoke(prompt)
         new_sentence = response.content.strip()
+        # Strip markdown fences the LLM sometimes wraps around its output
+        if new_sentence.startswith("```"):
+            new_sentence = new_sentence.split("```")[1]
+            if new_sentence.startswith(("sql", "json")):
+                new_sentence = new_sentence[new_sentence.index("\n")+1:]
+            new_sentence = new_sentence.strip()
         sentences = state["logic_sentences"].copy()
         sentences[state["current_idx"]] = new_sentence
         console.print(f"[yellow]  → Rephrased: {new_sentence[:120]}[/]")
@@ -474,6 +492,10 @@ def execution_node(state: AgentState) -> AgentState:
 # ─────────────────────────────────────────────
 def synthesize_node(state: AgentState) -> AgentState:
     _print_step("💡  SYNTHESIZING FINAL ANSWER", "yellow")
+
+    if not state["step_results"]:
+        console.print("[red]  → No step results — cannot synthesize answer.[/]")
+        return {**state, "final_answer": "Could not answer: no data was fetched or computed. The execution plan may have been empty or all steps failed."}
 
     results_block = "\n".join(state["step_results"])
 

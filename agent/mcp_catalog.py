@@ -20,6 +20,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_account_growth_list": {
         "path": "/api/insight-hub/account-growth/",
@@ -33,6 +34,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_commissions_list": {
         "path": "/api/insight-hub/commissions/",
@@ -45,6 +47,7 @@ MCP_TOOL_CATALOG = {
             "or to see how much GMV is in-cart vs scheduled vs already completed for commission purposes."
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
+        "no_ids": True,
     },
     "api_insight_hub_customer_spend_mom_list": {
         "path": "/api/insight-hub/customer-spend-mom/",
@@ -58,6 +61,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_first_touch_to_order_list": {
         "path": "/api/insight-hub/first-touch-to-order/",
@@ -70,6 +74,7 @@ MCP_TOOL_CATALOG = {
     
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_gmv_by_state_list": {
         "path": "/api/insight-hub/gmv-by-state/",
@@ -81,6 +86,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_gmv_mom_list": {
         "path": "/api/insight-hub/gmv-mom/",
@@ -94,6 +100,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_product_mix_list": {
         "path": "/api/insight-hub/product-mix/",
@@ -105,6 +112,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_quota_vs_actual_list": {
         "path": "/api/insight-hub/quota-vs-actual/",
@@ -118,6 +126,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_quotas_list": {
         "path": "/api/insight-hub/quotas/",
@@ -129,6 +138,7 @@ MCP_TOOL_CATALOG = {
     
         "filters": "rep_id, month",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_sales_funnel_list": {
         "path": "/api/insight-hub/sales-funnel/",
@@ -139,6 +149,7 @@ MCP_TOOL_CATALOG = {
             "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
+        "no_ids": True,
     },
     "api_insight_hub_spend_by_product_list": {
         "path": "/api/insight-hub/spend-by-product/",
@@ -151,6 +162,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_spend_by_supplier_list": {
         "path": "/api/insight-hub/spend-by-supplier/",
@@ -162,6 +174,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_take_rate_mom_list": {
         "path": "/api/insight-hub/take-rate-mom/",
@@ -173,6 +186,7 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
 
     # ── ADMIN / INTERNAL ──────────────────────────────────────────────────────
@@ -357,8 +371,11 @@ MCP_TOOL_CATALOG = {
             "Returns insurance policies on file for accounts. "
             "Use this to check insurance compliance, find expired policies, or count accounts with valid coverage."
         ),
-    
         "filters": "account, type, status",
+        "filter_enums": {
+            "type": ["general_liability", "equipment_liability", "umbrella_liability"],
+            "status": ["processing", "parsing_failed", "needs_attention", "active", "expiring_soon", "expired", "deactivated"],
+        },
         "method": "GET",
     },
     "api_v1_insurance_policies_get": {
@@ -380,6 +397,9 @@ MCP_TOOL_CATALOG = {
             "or to list unpaid invoices for an account."
         ),
         "filters": "id, user_address, month, year, status, search, created_after, created_before, due_after, due_before, amount_min, amount_max, categories, locations, users, user_group, past_due, order",
+        "filter_enums": {
+            "status": ["draft", "open", "paid", "void", "uncollectible", "deleted"],
+        },
         "method": "GET",
     },
     "api_v1_invoices_metrics_list": {
@@ -504,7 +524,10 @@ MCP_TOOL_CATALOG = {
             "find bookings by job site, or calculate total booking value."
         ),
         "filters": "id, active, code, status, date_after, date_before, search, exclude_canceled, supplier, product_category, user, user_address, user_group, invoice_status",
-    
+        "filter_enums": {
+            "status": ["PENDING", "SCHEDULED", "COMPLETE", "CANCELLED", "ADMIN_APPROVAL_PENDING", "ADMIN_APPROVAL_DECLINED", "CREDIT_APPLICATION_APPROVAL_PENDING", "CREDIT_APPLICATION_DECLINED"],
+            "invoice_status": ["draft", "open", "paid", "void", "uncollectible", "deleted"],
+        },
         "method": "GET",
     },
     "api_v1_order_groups_filter_options_list": {
@@ -552,6 +575,12 @@ MCP_TOOL_CATALOG = {
             "Use this only from the supplier side to see their own delivery schedule or incoming order queue."
         ),
         "filters": "id, order_group, status, code, seller_location, seller, product_category, on_rent, tab, order_type, service_date_after, service_date_before, assignment, search, allow_all",
+        "filter_enums": {
+            "status": ["PENDING", "SCHEDULED", "COMPLETE", "CANCELLED", "ADMIN_APPROVAL_PENDING", "ADMIN_APPROVAL_DECLINED", "CREDIT_APPLICATION_APPROVAL_PENDING", "CREDIT_APPLICATION_DECLINED"],
+            "order_type": ["DELIVERY", "PICKUP", "RETURN", "SWAP", "REMOVAL", "AUTO_RENEWAL", "ONE_TIME"],
+            "tab": ["new", "scheduled", "history", "in_cart", "cancelled"],
+            "assignment": ["initial", "reassigning", "needs_sourcing"],
+        },
         "method": "GET",
     },
     "api_v1_orders_for_seller_get": {
@@ -572,6 +601,10 @@ MCP_TOOL_CATALOG = {
             "date_after/date_before filter on end_date (service date), not created_on."
         ),
         "filters": "id, order_group, submitted_on, date_after, date_before, code, status, type, user_group, user_address, seller",
+        "filter_enums": {
+            "status": ["PENDING", "SCHEDULED", "COMPLETE", "CANCELLED", "ADMIN_APPROVAL_PENDING", "ADMIN_APPROVAL_DECLINED", "CREDIT_APPLICATION_APPROVAL_PENDING", "CREDIT_APPLICATION_DECLINED"],
+            "type": ["DELIVERY", "PICKUP", "RETURN", "SWAP", "REMOVAL", "AUTO_RENEWAL", "ONE_TIME"],
+        },
         "method": "GET",
     },
     "api_v1_orders_internal_sales_data_list": {
@@ -719,6 +752,9 @@ MCP_TOOL_CATALOG = {
             "Pass allow_all=true to see all locations platform-wide."
         ),
         "filters": "id, seller, allow_all, search, latitude, longitude, radius, zoom_level, open, pickup, exclude_ds, product_category, active_only, status",
+        "filter_enums": {
+            "status": ["compliant", "insurance", "tax", "insurance_expiring", "payouts"],
+        },
         "method": "GET",
     },
     "api_v1_seller_locations_get": {
@@ -740,6 +776,9 @@ MCP_TOOL_CATALOG = {
             "or count active product listings per market."
         ),
         "filters": "id, seller, seller_product, product, main_product_category, main_product, seller_location, search, status, allow_all",
+        "filter_enums": {
+            "status": ["active", "inactive", "needs_attention"],
+        },
         "method": "GET",
     },
     "api_v1_seller_product_seller_locations_metrics_list": {
@@ -789,6 +828,11 @@ MCP_TOOL_CATALOG = {
             "Use this for supplier accounts-payable tracking or outstanding seller liabilities."
         ),
         "filters": "seller_location, status, received_date_after, received_date_before, due_date_after, due_date_before, amount_min, amount_max, ocr_status, ingestion_source, has_variance, seller_id",
+        "filter_enums": {
+            "status": ["PENDING_OCR", "OCR_FAILED", "PENDING_MATCH", "PENDING_VALIDATION", "AUTO_APPROVED", "READY_FOR_PAYOUT", "ESCALATED", "HUMAN_APPROVED", "DISPUTED", "ERROR", "PAID", "UNPAID"],
+            "ocr_status": ["pending", "processing", "completed", "failed"],
+            "ingestion_source": ["MANUAL", "STABLE_MAIL", "ZOHO_EMAIL"],
+        },
         "method": "GET",
     },
     "api_v1_sellerinvoicepayable_get": {
@@ -892,6 +936,9 @@ MCP_TOOL_CATALOG = {
             "count active projects per account, or get site IDs for order filtering."
         ),
         "filters": "id, search, state, city, product_category, is_archived, active_only, latitude, longitude, radius, zoom_level, user_group, user, status, suppliers",
+        "filter_enums": {
+            "status": ["upcoming", "complete"],
+        },
         "method": "GET",
     },
     "api_v1_user_addresses_filter_options_list": {
@@ -972,6 +1019,10 @@ MCP_TOOL_CATALOG = {
             "or rank accounts by spend for prioritization."
         ),
         "filters": "id, search, has_seller, sales_status, lifecycle_status",
+        "filter_enums": {
+            "sales_status": ["icebox", "prospecting", "winback", "managed", "junk"],
+            "lifecycle_status": ["never_ordered", "active", "at_risk", "churned"],
+        },
         "method": "GET",
     },
     "api_v1_user_groups_get": {
@@ -1009,6 +1060,9 @@ MCP_TOOL_CATALOG = {
         ),
     
         "filters": "id, search, type, has_seller, user_group, user_address, email",
+        "filter_enums": {
+            "type": ["ADMIN", "BILLING", "MEMBER"],
+        },
         "method": "GET",
     },
     "api_v1_users_me_list": {

@@ -22,6 +22,36 @@ TOOL_SELECTOR_MODEL = os.getenv("TOOL_SELECTOR_MODEL", "")
 
 _MCP_SUFFIX = re.compile(r"_mcp_\w+$")
 
+_PROMPT_TEMPLATE = """\
+You are an analytics planning assistant for the Downstream platform.
+
+Your job: given an analytics question, output a structured analytical plan that a SQL execution engine will use. The engine has access to the actual database schema — do NOT include column names, table names, or SQL syntax. Describe pure intent only.
+
+Output this exact format, nothing else:
+
+Metric: [one sentence — what value is being measured and why it answers the question]
+
+Grain: [one sentence — unit of analysis; what one row in the final result represents]
+
+Logic:
+  step 1 — [plain English description of the first data transformation needed]
+  step 2 — [next transformation]
+  step 3 — [continue until the final output is fully described]
+  final  — [output shape: what columns, what order]
+
+Rules:
+- No column names, no table names, no SQL keywords
+- No offers, no options, no questions back to the user
+- No hedging ("you could", "one approach is") — one definitive plan
+- If a rate or percentage is the right metric, say so explicitly in Logic final step
+- If the question requires joining data from multiple sources, name those sources in plain English (e.g. "orders" and "product catalog"), not as table names
+
+Question: {question}"""
+
+
+def _build_prompt(question: str) -> str:
+    return _PROMPT_TEMPLATE.format(question=question)
+
 
 def get_relevant_tools(question: str, top_k: int = 8) -> tuple[str, str]:
     """
@@ -84,7 +114,7 @@ def _ask_agent(question: str) -> tuple[list[str], str]:
             },
             json={
                 "model": TOOL_SELECTOR_MODEL,
-                "messages": [{"role": "user", "content": question}],
+                "messages": [{"role": "user", "content": _build_prompt(question)}],
                 "stream": False,
             },
             timeout=30,

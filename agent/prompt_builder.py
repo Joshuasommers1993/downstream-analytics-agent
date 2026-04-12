@@ -22,8 +22,12 @@ def format_tool_block(name: str, info: dict) -> str:
         [api_ordergroup]: id, user_address→api_useraddress, user→api_user, ...
     """
     lines = [f"  {name}", f"    -> {info['description']}"]
+    if info.get("no_ids"):
+        lines.append("    -> WARNING: pre-aggregated summary — display strings only, no UUIDs. Do not use to resolve IDs or join to raw tables.")
     if info.get("filters"):
         lines.append(f"    -> Filters: {info['filters']}")
+    for param, values in (info.get("filter_enums") or {}).items():
+        lines.append(f"    -> {param} values: {', '.join(values)}")
 
     fields = API_FIELDS.get(name)
     if fields:
