@@ -13,7 +13,11 @@ import os
 import re
 import json
 import uuid
+import atexit
+import shutil
 import textwrap
+import glob as _glob
+from datetime import datetime, timezone
 import pandas as pd
 import duckdb
 from dotenv import load_dotenv
@@ -32,6 +36,18 @@ console = Console()
 
 SESSION_DIR = f"/tmp/analytics_session_{uuid.uuid4().hex[:8]}"
 os.makedirs(SESSION_DIR, exist_ok=True)
+
+# Clean up this session's temp dir on exit
+atexit.register(shutil.rmtree, SESSION_DIR, True)
+
+# Clean up stale sessions older than 2 hours from previous crashed runs
+_stale_cutoff = datetime.now(timezone.utc).timestamp() - 2 * 3600
+for _stale in _glob.glob("/tmp/analytics_session_*"):
+    try:
+        if os.path.getmtime(_stale) < _stale_cutoff:
+            shutil.rmtree(_stale, ignore_errors=True)
+    except OSError:
+        pass
 
 # ─────────────────────────────────────────────
 # LLM
@@ -221,7 +237,7 @@ Rules:
   * Example: "FETCH: api_v1_orders_list status=COMPLETE created_on__gte=2024-01-01"
   * Example: "FETCH: api_v1_seller_locations_list is_active=true"
   * Use each tool's "Filters:" list — only pass params the tool actually supports
-  * Dates use ISO format YYYY-MM-DD. Today is 2026-04-09.
+  * Dates use ISO format YYYY-MM-DD. Today is {datetime.now().strftime("%Y-%m-%d")}.
   * Filtering server-side is MUCH faster than downloading all rows and filtering in SQL — always prefer it
   * IMPORTANT: Large tables (orders, user_addresses, seller_products, etc.) can have hundreds of thousands of rows. The fetch is capped at 100,000 rows. For any question involving order history, cohort analysis, or retention, ALWAYS add a date range filter (e.g. created_on__gte=2024-01-01) to avoid hitting the cap and getting incomplete data.
   * You can reference a field from a previous FETCH result as a filter value using FETCH_N.field_name
@@ -229,6 +245,8 @@ Rules:
     - Example: "FETCH: api_v1_users_list user_group=FETCH_0.user_group"
     - The field must exist in that FETCH step's listed columns
     - This reads the first row's value from that column at runtime — use only for scalar FK fields
+    - FETCH_N resolves exactly ONE value (the first row). Never use it to pass a list of IDs.
+      For multi-value lookups, fetch the full dataset and filter in a COMPUTE step instead.
 - COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
   * Use read_csv_auto('FETCH_N') where N = 0-indexed position in the temp_files list
     - FETCH_0 = result of the 1st FETCH step
