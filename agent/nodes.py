@@ -190,8 +190,8 @@ def reasoning_node(state: AgentState) -> AgentState:
             stripped = line.strip()
             if stripped and not stripped.startswith("->"):
                 console.print(f"[blue]     {stripped}[/]")
-            elif stripped.startswith("->"):
-                console.print(f"[dim]       {stripped}[/]")
+            # elif stripped.startswith("->"):
+            #     console.print(f"[dim]       {stripped}[/]")
 
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
@@ -286,8 +286,10 @@ Rules:
 - Use only columns that exist in the CSV (check the error for actual column names)
 - Quote dot-notation column names with double quotes (e.g. "conversion_rates.overall")
 - Use json_extract for JSON array columns
+- CTEs (WITH clauses) are valid and preferred — do NOT split them into separate files
+- NEVER reference tables by name (first_product, first_order, etc.) — only read_csv_auto(path) or CTEs defined in the same query
 
-Output only the corrected sentence starting with "COMPUTE: SELECT ..." — nothing else.
+Output only the corrected sentence starting with "COMPUTE: " followed by valid DuckDB SQL (may start with WITH for CTEs) — nothing else.
 """.strip()
         else:
             # FETCH error — rephrase or switch tool
@@ -397,7 +399,7 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     df = pd.json_normalize(all_rows)
     df.to_csv(filename, index=False)
     console.print(f"[green]  → Saved {len(df)} rows → {filename}[/]")
-    console.print(f"[green]  → Columns: {list(df.columns)}[/]")
+    # console.print(f"[green]  → Columns: {list(df.columns)}[/]")
 
     return {
         **state,

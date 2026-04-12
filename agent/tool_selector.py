@@ -87,6 +87,7 @@ def _ask_agent(question: str) -> list[str]:
         )
         response.raise_for_status()
         message = response.json()["choices"][0]["message"]
+        print(message)
 
         names = []
 
