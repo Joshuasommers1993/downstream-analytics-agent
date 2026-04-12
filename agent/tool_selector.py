@@ -39,12 +39,15 @@ Logic:
   step 3 — [continue until the final output is fully described]
   final  — [output shape: what columns, what order]
 
+RAG query: [1-2 phrases describing the data sources needed, written to match API tool descriptions — e.g. "completed order history per customer, product catalog for UUID resolution"]
+
 Rules:
 - No column names, no table names, no SQL keywords
 - No offers, no options, no questions back to the user
 - No hedging ("you could", "one approach is") — one definitive plan
 - If a rate or percentage is the right metric, say so explicitly in Logic final step
 - If the question requires joining data from multiple sources, name those sources in plain English (e.g. "orders" and "product catalog"), not as table names
+- RAG query must be compact (1-2 phrases), specific to the data sources needed, not a restatement of the question
 
 Question: {question}"""
 
@@ -61,16 +64,14 @@ def get_relevant_tools(question: str, top_k: int = 8) -> tuple[str, str]:
 
     Returns (tool_blocks, agent_reasoning):
       tool_blocks    — formatted string: tool_name + fields + filters
-      agent_reasoning — prose/SQL the Stage 1 agent wrote (may be empty string)
+      agent_reasoning — full Metric/Grain/Logic from Stage 1 (may be empty string)
     """
     from agent.mcp_catalog import MCP_TOOL_CATALOG
     from agent.schema_rag import get_relevant_tools as rag_get
 
-    agent_names, agent_reasoning = _ask_agent(question)
-    # Use Stage 1 reasoning as RAG query if available — it's richer than the raw question
-    # and uses domain language ("product catalog", "completed orders") that maps better to tool descriptions
-    rag_query = agent_reasoning or question
-    rag_result = rag_get(rag_query, top_k=top_k)
+    agent_names, agent_reasoning, rag_query = _ask_agent(question)
+    # RAG query: use dedicated compact line from Stage 1 > full reasoning > raw question
+    rag_result = rag_get(rag_query or agent_reasoning or question, top_k=top_k)
 
     # Parse RAG tool names from its formatted output
     rag_names = [
@@ -90,7 +91,7 @@ def get_relevant_tools(question: str, top_k: int = 8) -> tuple[str, str]:
             break
 
     if not merged:
-        return rag_result, agent_reasoning  # full fallback
+        return rag_result, agent_reasoning  # full fallback (two-tuple: tool_blocks, reasoning)
 
     from agent.prompt_builder import format_tool_block
 
@@ -133,9 +134,18 @@ def _ask_agent(question: str) -> tuple[list[str], str]:
             if clean:
                 names.append(clean)
 
-        reasoning = (message.get("content") or "").strip()
-        return names, reasoning
+        content = (message.get("content") or "").strip()
+
+        # Extract dedicated RAG query line if present (separate from full reasoning)
+        rag_query = ""
+        if content:
+            for line in content.splitlines():
+                if line.lower().startswith("rag query:"):
+                    rag_query = line[len("rag query:"):].strip()
+                    break
+
+        return names, content, rag_query
 
     except Exception as e:
         print(f"[tool_selector] Agent call failed: {e}, falling back to RAG")
-        return [], ""
+        return [], "", ""

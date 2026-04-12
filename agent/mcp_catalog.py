@@ -476,8 +476,9 @@ MCP_TOOL_CATALOG = {
         "description": (
             "Returns the master product catalog — the canonical list of all waste/service products offered on the platform. "
             "Examples: 10-yard dumpster, 20-yard dumpster, portable toilet, temporary fence, storage container. "
-            "Use this to look up product IDs, get the full product catalog, "
-            "find which products are available, or map product names to IDs."
+            "Use this to look up product IDs, get the full product catalog, find which products are available, "
+            "map product names to IDs, or resolve main_product UUID foreign keys from orders into human-readable product names. "
+            "Required whenever order data contains main_product UUIDs that need to be joined to product names."
         ),
         "filters": "id, main_product_category__id, main_product_category__slug, is_related, seller_location, allows_pickup, search",
         "method": "GET",

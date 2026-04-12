@@ -72,7 +72,7 @@ def _headers_for(path: str) -> dict:
         return _INSIGHT_HEADERS
     return _API_HEADERS
 
-MAX_FETCH_ROWS = 10_000     # cap to avoid multi-minute fetches on large tables
+MAX_FETCH_ROWS = 100_000    # cap to avoid multi-minute fetches on large tables
 
 def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
     """Fetch all pages from a cursor-paginated Downstream API endpoint."""
@@ -114,6 +114,8 @@ def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
         rows.extend(page)
 
         if len(rows) >= MAX_FETCH_ROWS:
+            import warnings
+            warnings.warn(f"fetch_all_pages: hit {MAX_FETCH_ROWS} row cap for {path}. Results are incomplete — add server-side filters to narrow the dataset.")
             break       # cap reached - return what we have so far
 
         if not data.get("has_more") or not page:
@@ -221,6 +223,7 @@ Rules:
   * Use each tool's "Filters:" list — only pass params the tool actually supports
   * Dates use ISO format YYYY-MM-DD. Today is 2026-04-09.
   * Filtering server-side is MUCH faster than downloading all rows and filtering in SQL — always prefer it
+  * IMPORTANT: Large tables (orders, user_addresses, seller_products, etc.) can have hundreds of thousands of rows. The fetch is capped at 100,000 rows. For any question involving order history, cohort analysis, or retention, ALWAYS add a date range filter (e.g. created_on__gte=2024-01-01) to avoid hitting the cap and getting incomplete data.
   * You can reference a field from a previous FETCH result as a filter value using FETCH_N.field_name
     - Example: "FETCH: api_v1_user_groups_list id=FETCH_0.user_group"
     - Example: "FETCH: api_v1_users_list user_group=FETCH_0.user_group"
@@ -418,8 +421,11 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         except Exception as e:
             return {**state, "error": f"MCP tool error: {e}"}
 
-    cap_note = f" [yellow](capped at {MAX_FETCH_ROWS})[/]" if len(all_rows) >= MAX_FETCH_ROWS else ""
-    console.print(f"[green] → Got {len(all_rows)} rows[/]")
+    capped = len(all_rows) >= MAX_FETCH_ROWS
+    cap_note = f" [yellow](capped at {MAX_FETCH_ROWS})[/]" if capped else ""
+    console.print(f"[green] → Got {len(all_rows)} rows{cap_note}[/]")
+    if capped:
+        console.print(f"[bold yellow]  ⚠ WARNING: fetch hit the {MAX_FETCH_ROWS}-row cap — results are INCOMPLETE. Add server-side date/status filters to get full data.[/]")
 
     # Save to temp CSV — named by fetch order (not sentence index)
     fetch_idx = len(state["temp_files"])
