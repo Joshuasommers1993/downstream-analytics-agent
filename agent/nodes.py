@@ -90,49 +90,124 @@ def _headers_for(path: str) -> dict:
 
 MAX_FETCH_ROWS = 100_000    # cap to avoid multi-minute fetches on large tables
 
-def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
-    """Fetch all pages from a cursor-paginated Downstream API endpoint."""
-    rows: list[dict] = []
-    query = dict(params or {})
-    query["limit"] = 100
+# Measured throughput: ~100 rows per request, ~0.9s per request
+# NOTE: Downstream API uses cursor-based pagination (starting_after), not offset-based.
+# Parallel fetching is not possible — the API ignores offset= and always returns from the start.
+_ROWS_PER_PAGE = 100
+_SECS_PER_PAGE = 0.9
+
+
+def _preflight_check(path: str, params: dict, has_filters: bool) -> int | None:
+    """
+    Fire limit=1 probe(s) to get server-side count before a full fetch.
+
+    When filters are present, fires two probes:
+      1. with filters    → count_filtered
+      2. without filters → count_unfiltered
+
+    If count_filtered == count_unfiltered, the API silently ignored the filter
+    (unknown param) — warns the agent so it can correct the filter key.
+
+    Returns the filtered count (or unfiltered if no filters), or None if the
+    API doesn't expose a count field (e.g. insight-hub summary endpoints).
+    """
+
+    def _probe(probe_params: dict) -> int | None:
+        try:
+            resp = requests.get(
+                f"{_API_BASE}{path}",
+                headers=_headers_for(path),
+                params={**probe_params, "limit": 1},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            console.print(f"[dim green]  → Pre-flight failed ({e}), proceeding without count estimate.[/]")
+            return None
+        if not isinstance(data, dict):
+            return None
+        for key in ("count", "total", "num_results", "total_count"):
+            val = data.get(key)
+            if isinstance(val, int):
+                return val
+        return None
+
+    count = _probe(params)
+    if count is None:
+        return None  # bare array or summary endpoint — skip
+
+    # If filters were passed, also probe without them to detect silent no-ops
+    if has_filters:
+        count_unfiltered = _probe({})
+        if count_unfiltered is not None and count == count_unfiltered:
+            filter_keys = ", ".join(k for k in params)
+            console.print(f"[bold yellow]  ⚠ Pre-flight: filtered count ({count:,}) == unfiltered count ({count_unfiltered:,}) — filter param(s) [{filter_keys}] may not be recognized by this endpoint and are being silently ignored.[/]")
+        elif count == 0:
+            console.print(f"[bold yellow]  ⚠ Pre-flight: 0 rows with current filters — no matching data or filters are too restrictive.[/]")
+
+    # Estimate fetch time (sequential cursor pagination)
+    pages = max(1, -(-min(count, MAX_FETCH_ROWS) // _ROWS_PER_PAGE))
+    est_secs = pages * _SECS_PER_PAGE
+    est_str = f"~{est_secs:.0f}s" if est_secs < 60 else f"~{est_secs/60:.1f}min"
+
+    if count >= MAX_FETCH_ROWS:
+        console.print(f"[bold yellow]  ⚠ Pre-flight: {count:,} rows — will hit {MAX_FETCH_ROWS:,}-row cap. Add filters to narrow the dataset. Estimated fetch time: {est_str}[/]")
+    else:
+        console.print(f"[green]  → Pre-flight: {count:,} rows — estimated fetch time {est_str}[/]")
+
+    return count
+
+
+def _extract_page(data: dict | list) -> list[dict] | None:
+    """Extract the row list from an API response envelope. Returns None for single-object responses."""
+    if isinstance(data, list):
+        return data
+    for list_key in ("data", "results", "rows"):
+        if list_key in data and isinstance(data[list_key], list):
+            return data[list_key]
+    # Fall back: first list value (covers insight-hub custom keys)
+    for value in data.values():
+        if isinstance(value, list):
+            return value
+    return None  # single-object response
+
+
+def fetch_all_pages(path: str, params: dict | None = None, total_count: int | None = None) -> list[dict]:
+    """
+    Fetch all rows from a Downstream API endpoint using cursor-based pagination.
+
+    The Downstream API uses starting_after cursor pagination — offset-based parallel
+    fetching is not possible as the API ignores the offset param and always returns
+    from the beginning.
+    """
+    params = dict(params or {})
     headers = _headers_for(path)
+    rows = []
+    query = {**params, "limit": _ROWS_PER_PAGE}
 
     while True:
         resp = requests.get(f"{_API_BASE}{path}", headers=headers, params=query, timeout=30)
         resp.raise_for_status()
         data = resp.json()
 
-        if isinstance(data, list):
-            # Bare array response
-            rows.extend(data)
-            break
-
-        # Try known paginated list keys first
-        page = None
-        for list_key in ("data", "results", "rows"):
-            if list_key in data and isinstance(data[list_key], list):
-                page = data[list_key]
-                break
-
-        # Fall back: scan all values for the first non-empty list
-        # (covers insight-hub custom keys: months, states, categories, etc.)
-        if page is None:
-            for value in data.values():
-                if isinstance(value, list):
-                    page = value
-                    break
+        page = _extract_page(data)
 
         if page is None:
             # Single-object response — wrap as one row
             rows.append(data)
             break
 
+        if isinstance(data, list):
+            rows.extend(data)
+            break
+
         rows.extend(page)
 
         if len(rows) >= MAX_FETCH_ROWS:
             import warnings
-            warnings.warn(f"fetch_all_pages: hit {MAX_FETCH_ROWS} row cap for {path}. Results are incomplete — add server-side filters to narrow the dataset.")
-            break       # cap reached - return what we have so far
+            warnings.warn(f"fetch_all_pages: hit {MAX_FETCH_ROWS} row cap for {path}. Results are incomplete.")
+            break
 
         if not data.get("has_more") or not page:
             break
@@ -175,9 +250,23 @@ def get_mcp_tools():
 # ─────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────
+_step_start_times: dict[str, float] = {}
+
+
 def _print_step(title: str, color: str, body: str = ""):
+    import time
+    ts = datetime.now().strftime("%H:%M:%S")
+
+    # Print elapsed time since the previous step
+    if _step_start_times:
+        last_key = next(reversed(_step_start_times))
+        elapsed = time.time() - _step_start_times[last_key]
+        console.print(f"[dim]  ↳ {last_key} took {elapsed:.1f}s[/]")
+
+    _step_start_times[title] = time.time()
+
     console.print(f"\n[bold {color}]{'━'*60}[/]")
-    console.print(f"[bold {color}]{title}[/]")
+    console.print(f"[bold {color}]{title}[/]  [dim]{ts}[/]")
     if body:
         console.print(f"[dim]{textwrap.fill(body, width=70)}[/]")
 
@@ -259,6 +348,7 @@ Rules:
   * For JSON array columns, use json_extract(col, '$[*].field') to access items
   * For dot-notation columns (e.g. conversion_rates.overall), quote them: "conversion_rates.overall"
   * Use epoch() for date arithmetic: epoch(col::TIMESTAMP) gives Unix seconds; divide by 86400 for days
+  * When combining two independently fetched datasets on any key that is not guaranteed to exist in both sources, ALWAYS use FULL OUTER JOIN with COALESCE, never INNER JOIN — INNER JOIN silently drops rows present in only one source and produces incomplete results with no error or warning. Only use INNER JOIN when you explicitly want to restrict results to rows that exist in both datasets (e.g. filtering orders to only those with a matching seller).
   * SELECT only — no INSERT/UPDATE/DELETE
   * Return a concise, focused result
 - FETCH steps must come before COMPUTE steps that depend on them
@@ -420,8 +510,12 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         # Read-only: call Downstream API directly with optional server-side filters
         path = tool_info["path"]
         console.print(f"[green]  → Direct API: GET {_API_BASE}{path}[/]")
+
+        # Pre-flight: get row count, estimate time, validate filters
+        total_count = _preflight_check(path, api_params, has_filters=bool(api_params))
+
         try:
-            all_rows = fetch_all_pages(path, params=api_params)
+            all_rows = fetch_all_pages(path, params=api_params, total_count=total_count)
         except Exception as e:
             return {**state, "error": f"API fetch error ({path}): {e}"}
     else:

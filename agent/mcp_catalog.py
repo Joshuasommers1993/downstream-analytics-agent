@@ -1318,6 +1318,7 @@ MCP_TOOL_CATALOG = {
             "`account_owner` on UserGroup is the sales rep (User FK), NOT the account's own admin or primary contact.",
             "Default ordering is by last calendar-month customer spend descending; pass `ordering=biggest_gap` to sort by target_monthly_gmv gap.",
             "Scoping uses user_groups_user_can_access_q — under impersonation, returns the impersonated user's accessible accounts.",
+            "UserGroup.source = account creation origin (USER-GENERATED, PLANHUB) — NOT the marketing acquisition channel. Marketing channel (GOOGLE, META_ADS, SALES, etc.) lives on User.source. To filter accounts by acquisition channel, fetch api_v1_users_list and join via created_by.",
         ],
         "path": "/api/v1/user-groups/",
         "description": (

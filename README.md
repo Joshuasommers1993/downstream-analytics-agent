@@ -149,8 +149,8 @@ Track progress per branch — update ✅ / ❌ as you test each question.
 
 | # | Question | Status |
 |---|----------|:------:|
-| 1 | What percentage of UserGroups place a second OrderGroup within 30 days of their first? | ❌ |
-| 2 | How does retention vary by first MainProduct ordered? | ❌ |
+| 1 | What percentage of UserGroups place a second OrderGroup within 30 days of their first? | ✅ |
+| 2 | How does retention vary by first MainProduct ordered? | ✅ |
 | 3 | Do UserGroups from META_ADS have higher invoice delinquency rates than GOOGLE? | ❌ |
 | 4 | Which Sellers have the best performance on high-confidence recommendations? | ❌ |
 | 5 | What is the drop-off rate from recommendation -> OrderGroup -> Invoice -> Payment? | ❌ |
