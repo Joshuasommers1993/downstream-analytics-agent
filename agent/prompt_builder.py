@@ -12,18 +12,28 @@ def format_tool_block(name: str, info: dict) -> str:
     """Format one tool entry for the reasoning prompt.
 
     Outputs:
-      tool_name
+      tool_name  [Entity]
         -> description
+        -> WARNING: ...          (insight_hub endpoints only)
         -> Filters: ...
+        -> GOTCHA: ...           (one line per gotcha)
         -> [source_table]: field, fk_field→target_table, ...
 
     FK fields are annotated with their target table so the agent understands
     which fields are join keys, e.g.:
         [api_ordergroup]: id, user_address→api_useraddress, user→api_user, ...
     """
-    lines = [f"  {name}", f"    -> {info['description']}"]
+    entity = info.get("entity", "")
+    header = f"  {name}  [{entity}]" if entity else f"  {name}"
+    lines = [header, f"    -> {info['description']}"]
+    if info.get("no_ids"):
+        lines.append("    -> WARNING: pre-aggregated summary — display strings only, no UUIDs. Do not use to resolve IDs or join to raw tables.")
     if info.get("filters"):
         lines.append(f"    -> Filters: {info['filters']}")
+    for param, values in (info.get("filter_enums") or {}).items():
+        lines.append(f"    -> {param} values: {', '.join(values)}")
+    for gotcha in (info.get("gotchas") or []):
+        lines.append(f"    -> GOTCHA: {gotcha}")
 
     fields = API_FIELDS.get(name)
     if fields:

@@ -9,6 +9,12 @@ MCP_TOOL_CATALOG = {
     # ── INSIGHT HUB (pre-computed sales analytics) ────────────────────────────
 
     "api_insight_hub_account_classification_list": {
+        "entity": "InsightHub:AccountClassification",
+        "gotchas": [
+            "'Net New' = UserGroup whose first *confirmed* order's created_on falls in the period; 'Expansion' = all other active accounts; 'Backlog' = SCHEDULED orders only (not COMPLETE).",
+            "Date range filters on order end_date (service date), not created_on.",
+            "rep_id param maps to account_owner_id on UserGroup — this is the sales rep FK, not the customer.",
+        ],
         "path": "/api/insight-hub/account-classification/",
         "description": (
             "Pre-computed revenue breakdown for a date range by account classification: "
@@ -20,8 +26,15 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_account_growth_list": {
+        "entity": "InsightHub:AccountGrowth",
+        "gotchas": [
+            "CHURN_DAYS = 30: an account is 'churned' when last_order_date + 30 days crosses into the reporting period.",
+            "first_order_date uses order created_on; last_order_date uses order end_date — two different date semantics mixed.",
+            "Date filters apply to order end_date (service date), not created_on.",
+        ],
         "path": "/api/insight-hub/account-growth/",
         "description": (
             "Pre-computed customer acquisition and churn metrics for a date range. "
@@ -33,8 +46,16 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_commissions_list": {
+        "entity": "InsightHub:Commissions",
+        "gotchas": [
+            "FLAT_COMMISSION_RATE = 3.25%. Base = Invoice total minus insurance line items, refunds, credits, and sales tax (URS and SALES_TAX line item types excluded).",
+            "In-cart and SCHEDULED orders appear as pipeline (not yet earned); only COMPLETE = earned.",
+            "Uses Invoice.with_total_invoiced() — excludes DRAFT, VOID, UNCOLLECTIBLE invoices from the base.",
+            "rep_id maps to account_owner_id on UserGroup (sales rep, not customer).",
+        ],
         "path": "/api/insight-hub/commissions/",
         "description": (
             "Pre-computed commission calculations for all sales reps for a given month. "
@@ -45,8 +66,16 @@ MCP_TOOL_CATALOG = {
             "or to see how much GMV is in-cart vs scheduled vs already completed for commission purposes."
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
+        "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_customer_spend_mom_list": {
+        "entity": "InsightHub:CustomerSpendMoM",
+        "gotchas": [
+            "Only COMPLETE orders are included — SCHEDULED orders do not count toward spend.",
+            "Grouped by user_group per calendar month using TruncMonth on end_date.",
+            "Date filters on end_date (service date), not created_on or submitted_on.",
+        ],
         "path": "/api/insight-hub/customer-spend-mom/",
         "description": (
             "Pre-computed month-over-month spend breakdown by customer (user group / account). "
@@ -58,8 +87,15 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_first_touch_to_order_list": {
+        "entity": "InsightHub:FirstTouchToOrder",
+        "gotchas": [
+            "first_touch_date = UserAddress.first_touch_sent_at if set, otherwise earliest Cart created_on for that user address.",
+            "End point = earliest COMPLETE order start_date (not end_date, not submitted_on).",
+            "Measures marketing-to-revenue lag, not order-creation-to-delivery.",
+        ],
         "path": "/api/insight-hub/first-touch-to-order/",
         "description": (
             "Sales cycle speed metric — how many days from first email outreach to first order. "
@@ -70,8 +106,15 @@ MCP_TOOL_CATALOG = {
     
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_gmv_by_state_list": {
+        "entity": "InsightHub:GMVByState",
+        "gotchas": [
+            "Only SCHEDULED and COMPLETE order statuses are included.",
+            "State is derived from the UserAddress (job site), not the billing address.",
+            "Date filters on end_date (service date).",
+        ],
         "path": "/api/insight-hub/gmv-by-state/",
         "description": (
             "Pre-computed gross merchandise value (GMV) aggregated by US state for a date range. "
@@ -81,8 +124,15 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_gmv_mom_list": {
+        "entity": "InsightHub:GMVMoM",
+        "gotchas": [
+            "Only SCHEDULED and COMPLETE orders included — pending, cancelled, in-cart excluded.",
+            "Grouped by TruncMonth('end_date') — months are based on service date, not order creation date.",
+            "rep_id maps to account_owner_id on UserGroup (sales rep, not customer).",
+        ],
         "path": "/api/insight-hub/gmv-mom/",
         "description": (
             "Pre-computed gross merchandise value (GMV) and platform economics month-over-month. "
@@ -94,8 +144,14 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_product_mix_list": {
+        "entity": "InsightHub:ProductMix",
+        "gotchas": [
+            "Date filters on order end_date (service date), not created_on.",
+            "rep_id maps to account_owner_id on UserGroup (sales rep, not customer).",
+        ],
         "path": "/api/insight-hub/product-mix/",
         "description": (
             "Order volume by waste type or service category. "
@@ -105,8 +161,16 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_quota_vs_actual_list": {
+        "entity": "InsightHub:QuotaVsActual",
+        "gotchas": [
+            "Actuals = COMPLETE orders only (SCHEDULED not counted as actual).",
+            "'New accounts' = UserGroups whose first confirmed order falls in the period.",
+            "SalesQuota.month must be the first-of-month (DateField); non-first-of-month values will produce no quota row.",
+            "rep_id maps to account_owner_id on UserGroup (sales rep, not customer).",
+        ],
         "path": "/api/insight-hub/quota-vs-actual/",
         "description": (
             "Pre-computed sales rep quota attainment vs actual performance, per rep per month. "
@@ -118,19 +182,31 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_quotas_list": {
+        "entity": "InsightHub:Quota",
+        "gotchas": [
+            "SalesQuota.month is a DateField that must be set to the first day of the month; non-first-of-month values silently fail to match quota_vs_actual lookups.",
+            "gmv_target, new_accounts_target, orders_target are all nullable.",
+        ],
         "path": "/api/insight-hub/quotas/",
         "description": (
             "Returns the raw sales quota targets set for each sales rep by month. "
             "Use this to retrieve the quota plan for a rep, check what targets are set for a given month, "
             "or verify quota coverage across the team."
         ),
-    
         "filters": "rep_id, month",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_sales_funnel_list": {
+        "entity": "InsightHub:SalesFunnel",
+        "gotchas": [
+            "Classifies Cart objects, not Order objects. Stages in priority order: 'Closed Won' (submitted_on set), 'Closed Lost' (lost_on set), 'Quote Sent' (quote_expiration or to_emails present), 'Cart Updated' (has orders), 'Cart Created' (else).",
+            "A Cart is one-per-UserAddress; a single Cart transitions through all stages.",
+            "Date filters are on Cart's own timestamps, not on order end_date.",
+        ],
         "path": "/api/insight-hub/sales-funnel/",
         "description": (
             "Conversion rate from cart to confirmed order. Drop-off rate at each stage of the sales funnel. "
@@ -139,8 +215,16 @@ MCP_TOOL_CATALOG = {
             "Returns stages array (stage name, count, gmv) and conversion_rates (cart_to_quote, quote_to_close, overall). "
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
+        "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_spend_by_product_list": {
+        "entity": "InsightHub:SpendByProduct",
+        "gotchas": [
+            "Date filters on order end_date (service date), not created_on.",
+            "rep_id maps to account_owner_id on UserGroup (sales rep, not customer).",
+            "Do NOT join this to raw order tables for product name lookup — different grain and aggregation.",
+        ],
         "path": "/api/insight-hub/spend-by-product/",
         "description": (
             "Pre-computed revenue (GMV) and average order value aggregated by product category / waste type. "
@@ -151,8 +235,14 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_spend_by_supplier_list": {
+        "entity": "InsightHub:SpendBySupplier",
+        "gotchas": [
+            "Date filters on order end_date (service date), not created_on.",
+            "rep_id maps to account_owner_id on UserGroup (sales rep, not customer).",
+        ],
         "path": "/api/insight-hub/spend-by-supplier/",
         "description": (
             "Pre-computed customer spend aggregated by supplier (seller). "
@@ -162,8 +252,15 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
     "api_insight_hub_take_rate_mom_list": {
+        "entity": "InsightHub:TakeRateMoM",
+        "gotchas": [
+            "Take rate formula: (customer_price - seller_price) / customer_price * 100.",
+            "COMPLETE orders only — SCHEDULED excluded.",
+            "Grouped per rep per month; rep_id maps to account_owner_id on UserGroup.",
+        ],
         "path": "/api/insight-hub/take-rate-mom/",
         "description": (
             "Platform take rate trend over time. Downstream margin percentage month-over-month or year-over-year. "
@@ -173,11 +270,16 @@ MCP_TOOL_CATALOG = {
         ),
         "filters": "start_date, end_date, rep_id, team, industry_id, company_size_min, company_size_max, lead_source",
         "method": "GET",
+        "no_ids": True,
     },
 
     # ── ADMIN / INTERNAL ──────────────────────────────────────────────────────
 
     "api_v1_admin_communications_list": {
+        "entity": "Communication",
+        "gotchas": [
+            "Requires `user` UUID query param — returns empty queryset without it.",
+        ],
         "path": "/api/v1/admin/communications/",
         "description": (
             "Admin-only. Returns communication timeline entries for a single user ordered most-recent-first. "
@@ -185,10 +287,10 @@ MCP_TOOL_CATALOG = {
             "Filter: user_id. "
             "Use this to audit outreach history for a specific rep or customer."
         ),
-    
         "method": "GET",
     },
     "api_v1_admin_sales_target_vs_actuals_list": {
+        "entity": "Aggregated:SalesTargetVsActual",
         "path": "/api/v1/admin/sales/target-vs-actuals/",
         "description": (
             "Admin-only. Returns aggregate GMV pacing metrics and cumulative daily comparison against the prior month. "
@@ -196,20 +298,23 @@ MCP_TOOL_CATALOG = {
             "Use this for daily sales pacing dashboards, are-we-on-track analysis, "
             "or current month vs prior month performance."
         ),
-    
         "method": "GET",
     },
     "api_v1_admin_transactional_emails_list": {
+        "entity": "TransactionalEmail",
+        "gotchas": [
+            "Requires `user` UUID query param — returns empty queryset without it.",
+        ],
         "path": "/api/v1/admin/transactional-emails/",
         "description": (
             "Admin-only. Returns sent transactional emails addressed to a specific user, ordered most-recent-first. "
             "Filter: user_id. "
             "Use this to check which system emails were sent to a user (order confirmations, invoices, etc.)."
         ),
-    
         "method": "GET",
     },
     "api_v1_admin_user_addresses_goal_progress_list": {
+        "entity": "Aggregated:UserAddressGoalProgress",
         "path": "/api/v1/admin/user-addresses/{user_address_id}/goal-progress/",
         "description": (
             "Admin-only. Returns value and count metrics for a specific project (UserAddress): "
@@ -220,16 +325,17 @@ MCP_TOOL_CATALOG = {
         "requires_id": True,
     },
     "api_v1_admin_user_groups_goal_progress_aggregate_list": {
+        "entity": "Aggregated:UserGroupGoalProgress",
         "path": "/api/v1/admin/user-groups/goal-progress/aggregate/",
         "description": (
             "Admin-only. Returns aggregate goal progress across all user groups: "
             "total target GMV, total actual GMV, attainment percentage, account count. "
             "Use this for platform-wide goal attainment rollup or pipeline health overview."
         ),
-    
         "method": "GET",
     },
     "api_v1_admin_user_groups_goal_progress_list": {
+        "entity": "Aggregated:UserGroupGoalProgress",
         "path": "/api/v1/admin/user-groups/{user_group_id}/goal-progress/",
         "description": (
             "Admin-only. Returns goal, current value, and supporting metrics for a specific user group (account): "
@@ -240,6 +346,10 @@ MCP_TOOL_CATALOG = {
         "requires_id": True,
     },
     "api_v1_admin_user_groups_notes_list": {
+        "entity": "UserGroupNote",
+        "gotchas": [
+            "Notes attached to a UserGroup. Requires `user_group` UUID param to scope results.",
+        ],
         "path": "/api/v1/admin/user-groups/{user_group_id}/notes/",
         "description": (
             "Admin-only. Returns all CRM notes recorded for a specific account (user group) in descending creation order. "
@@ -252,6 +362,7 @@ MCP_TOOL_CATALOG = {
     # ── ADVERTISEMENTS ────────────────────────────────────────────────────────
 
     "api_v1_advertisements_list": {
+        "entity": "Advertisement",
         "path": "/api/v1/advertisements/",
         "description": (
             "Returns all advertisements (promotional banners/placements) configured in the platform. "
@@ -262,6 +373,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_advertisements_get": {
+        "entity": "Advertisement",
         "path": "/api/v1/advertisements/{id}/",
         "description": (
             "Returns a single advertisement by ID. "
@@ -276,6 +388,7 @@ MCP_TOOL_CATALOG = {
     # ── DAY OF WEEKS ──────────────────────────────────────────────────────────
 
     "api_v1_day_of_weeks_list": {
+        "entity": "DayOfWeek",
         "path": "/api/v1/day-of-weeks/",
         "description": (
             "Returns the lookup table of day-of-week records used by seller open hours. "
@@ -286,6 +399,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_day_of_weeks_get": {
+        "entity": "DayOfWeek",
         "path": "/api/v1/day-of-weeks/{id}/",
         "description": "Returns a single day-of-week record by ID.",
         "method": "GET",
@@ -295,6 +409,10 @@ MCP_TOOL_CATALOG = {
     # ── FINANCIAL CONNECTION ──────────────────────────────────────────────────
 
     "api_v1_financial_connection_list": {
+        "entity": "FinancialConnection",
+        "gotchas": [
+            "Scoped to the user's user_group if they have one; otherwise scoped to the user directly.",
+        ],
         "path": "/api/v1/financial-connection/",
         "description": (
             "Returns Plaid financial connection records linked to the authenticated user group. "
@@ -309,6 +427,7 @@ MCP_TOOL_CATALOG = {
     # ── IDENTITY VERIFICATION ─────────────────────────────────────────────────
 
     "api_v1_identity_verification_list": {
+        "entity": "IdentityVerification",
         "path": "/api/v1/identity-verification/",
         "description": (
             "Returns identity verification status for the authenticated user's account. "
@@ -321,6 +440,7 @@ MCP_TOOL_CATALOG = {
     # ── INDUSTRIES ────────────────────────────────────────────────────────────
 
     "api_v1_industries_list": {
+        "entity": "Industry",
         "path": "/api/v1/industries/",
         "description": (
             "Returns all industry classifications used to categorize customer accounts (user groups). "
@@ -331,12 +451,17 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_industries_get": {
+        "entity": "Industry",
         "path": "/api/v1/industries/{id}/",
         "description": "Returns a single industry by ID or slug.",
         "method": "GET",
         "requires_id": True,
     },
     "api_v1_industries_popular_products_list": {
+        "entity": "Industry",
+        "gotchas": [
+            "Returns popular MainProducts for an industry, not industry records themselves.",
+        ],
         "path": "/api/v1/industries/{id}/popular-products/",
         "description": (
             "Returns the most popular products (waste/service types) for a given industry, ranked by order COUNT (not revenue). "
@@ -352,16 +477,21 @@ MCP_TOOL_CATALOG = {
     # ── INSURANCE POLICIES ────────────────────────────────────────────────────
 
     "api_v1_insurance_policies_list": {
+        "entity": "InsurancePolicy",
         "path": "/api/v1/insurance-policies/",
         "description": (
             "Returns insurance policies on file for accounts. "
             "Use this to check insurance compliance, find expired policies, or count accounts with valid coverage."
         ),
-    
         "filters": "account, type, status",
+        "filter_enums": {
+            "type": ["general_liability", "equipment_liability", "umbrella_liability"],
+            "status": ["processing", "parsing_failed", "needs_attention", "active", "expiring_soon", "expired", "deactivated"],
+        },
         "method": "GET",
     },
     "api_v1_insurance_policies_get": {
+        "entity": "InsurancePolicy",
         "path": "/api/v1/insurance-policies/{insurance_policy_id}/",
         "description": "Returns a single insurance policy by ID.",
         "method": "GET",
@@ -371,6 +501,14 @@ MCP_TOOL_CATALOG = {
     # ── INVOICES ──────────────────────────────────────────────────────────────
 
     "api_v1_invoices_list": {
+        "entity": "Invoice",
+        "gotchas": [
+            "DRAFT invoices excluded by default — pass `include_draft=true` to include them.",
+            "`month`/`year` filters apply to due_date, not created_on.",
+            "`past_due` filter = status=OPEN AND due_date < now AND amount_remaining > 0.",
+            "`items`, `groups`, `pre_payment_credit`, `post_payment_credit` only populated when expanded via ?expand[].",
+            "`display_total` is a computed property, not a stored field.",
+        ],
         "path": "/api/v1/invoices/",
         "description": (
             "Returns invoices visible to the authenticated context (customer sees their invoices; "
@@ -380,9 +518,17 @@ MCP_TOOL_CATALOG = {
             "or to list unpaid invoices for an account."
         ),
         "filters": "id, user_address, month, year, status, search, created_after, created_before, due_after, due_before, amount_min, amount_max, categories, locations, users, user_group, past_due, order",
+        "filter_enums": {
+            "status": ["draft", "open", "paid", "void", "uncollectible", "deleted"],
+        },
         "method": "GET",
     },
     "api_v1_invoices_metrics_list": {
+        "entity": "Invoice",
+        "gotchas": [
+            "Scoped by `user_group` query param.",
+            "Uses Invoice.with_total_invoiced() which excludes DRAFT, VOID, UNCOLLECTIBLE.",
+        ],
         "path": "/api/v1/invoices/metrics/",
         "description": (
             "Returns aggregate invoice totals for the current scope: "
@@ -392,6 +538,12 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_invoices_get": {
+        "entity": "Invoice",
+        "gotchas": [
+            "DRAFT invoices excluded by default — pass `include_draft=true` to include them.",
+            "`items`, `groups`, `pre_payment_credit`, `post_payment_credit` only populated when expanded.",
+            "`display_total` is a computed property.",
+        ],
         "path": "/api/v1/invoices/{id}/",
         "description": "Returns a single invoice by ID with full details.",
         "method": "GET",
@@ -400,6 +552,12 @@ MCP_TOOL_CATALOG = {
 
     # ── KNOWLEDGE ─────────────────────────────────────────────────────────────
     "api_v1_knowledge_search_list": {
+        "entity": "KnowledgeDocument",
+        "gotchas": [
+            "POST endpoint (not GET) — requires mandatory `query` param in the request body.",
+            "Semantic/docs search returning document chunks, NOT queryable data records.",
+            "Do not use for analytics or data queries — use for 'how do I' / policy / documentation questions only.",
+        ],
         "path": "/api/v1/knowledge/search/",
         "description": (
             "Semantic vector search over the Downstream knowledge base. "
@@ -418,6 +576,7 @@ MCP_TOOL_CATALOG = {
     # ── MAIN PRODUCTS ─────────────────────────────────────────────────────────
 
     "api_v1_main_product_categories_list": {
+        "entity": "MainProductCategory",
         "path": "/api/v1/main-product-categories/",
         "description": (
             "Returns product categories in the Downstream catalog. "
@@ -429,12 +588,14 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_main_product_categories_get": {
+        "entity": "MainProductCategory",
         "path": "/api/v1/main-product-categories/{id}/",
         "description": "Returns a single product category by ID or slug.",
         "method": "GET",
         "requires_id": True,
     },
     "api_v1_main_product_category_groups_list": {
+        "entity": "MainProductCategoryGroup",
         "path": "/api/v1/main-product-category-groups/",
         "description": (
             "Returns top-level product category groups that bundle multiple categories. "
@@ -446,23 +607,27 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_main_product_category_groups_get": {
+        "entity": "MainProductCategoryGroup",
         "path": "/api/v1/main-product-category-groups/{id}/",
         "description": "Returns a single product category group by ID.",
         "method": "GET",
         "requires_id": True,
     },
     "api_v1_main_products_list": {
+        "entity": "MainProduct",
         "path": "/api/v1/main-products/",
         "description": (
             "Returns the master product catalog — the canonical list of all waste/service products offered on the platform. "
             "Examples: 10-yard dumpster, 20-yard dumpster, portable toilet, temporary fence, storage container. "
-            "Use this to look up product IDs, get the full product catalog, "
-            "find which products are available, or map product names to IDs."
+            "Use this to look up product IDs, get the full product catalog, find which products are available, "
+            "map product names to IDs, or resolve main_product UUID foreign keys from orders into human-readable product names. "
+            "Required whenever order data contains main_product UUIDs that need to be joined to product names."
         ),
         "filters": "id, main_product_category__id, main_product_category__slug, is_related, seller_location, allows_pickup, search",
         "method": "GET",
     },
     "api_v1_main_products_get": {
+        "entity": "MainProduct",
         "path": "/api/v1/main-products/{id}/",
         "description": "Returns a single main product by ID or slug with full details.",
         "method": "GET",
@@ -472,6 +637,12 @@ MCP_TOOL_CATALOG = {
     # ── MOBILE WIDGET ─────────────────────────────────────────────────────────
 
     "api_v1_mobile_widget_list": {
+        "entity": "Aggregated:UserDashboard",
+        "gotchas": [
+            "`cart_count` = number of unsubmitted orders (submitted_on is null), not number of Cart objects.",
+            "`active_bookings` = OrderGroups where end_date is null or future AND has at least one submitted, non-cancelled order.",
+            "end_date=null on an OrderGroup means equipment is still on-site (active rental), not missing data.",
+        ],
         "path": "/api/v1/mobile-widget/",
         "description": (
             "Returns summary data for the mobile homepage widget: "
@@ -485,6 +656,7 @@ MCP_TOOL_CATALOG = {
     # ── ORDER GROUPS (BOOKINGS) ───────────────────────────────────────────────
 
     "api_v1_order_group_attachments_list": {
+        "entity": "OrderGroupAttachment",
         "path": "/api/v1/order-group-attachments/",
         "description": (
             "Returns file attachments associated with order groups (bookings). "
@@ -495,6 +667,14 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_order_groups_list": {
+        "entity": "OrderGroup",
+        "gotchas": [
+            "end_date=null means equipment is on-site (still rented) — the `active` filter treats null end_date as active.",
+            "`status` filter checks orders__status (any order in the group matching), not a status field on OrderGroup itself.",
+            "`active` filter: end_date null OR end_date > today, AND group has at least one non-cancelled submitted order.",
+            "`date` filter maps to end_date (service/return date), not created_on.",
+            "`include_not_submitted=true` required to see in-cart OrderGroups — default excludes them.",
+        ],
         "path": "/api/v1/order-groups/",
         "description": (
             "Returns order groups (bookings / service agreements) accessible to the authenticated user. "
@@ -504,10 +684,17 @@ MCP_TOOL_CATALOG = {
             "find bookings by job site, or calculate total booking value."
         ),
         "filters": "id, active, code, status, date_after, date_before, search, exclude_canceled, supplier, product_category, user, user_address, user_group, invoice_status",
-    
+        "filter_enums": {
+            "status": ["PENDING", "SCHEDULED", "COMPLETE", "CANCELLED", "ADMIN_APPROVAL_PENDING", "ADMIN_APPROVAL_DECLINED", "CREDIT_APPLICATION_APPROVAL_PENDING", "CREDIT_APPLICATION_DECLINED"],
+            "invoice_status": ["draft", "open", "paid", "void", "uncollectible", "deleted"],
+        },
         "method": "GET",
     },
     "api_v1_order_groups_filter_options_list": {
+        "entity": "OrderGroup",
+        "gotchas": [
+            "Returns filter option enumerations (states, suppliers, categories) for the OrderGroup list UI — not OrderGroup records.",
+        ],
         "path": "/api/v1/order-groups/filter-options/",
         "description": (
             "Returns available filter options for the order groups list (bookings). "
@@ -518,12 +705,20 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_order_groups_get": {
+        "entity": "OrderGroup",
+        "gotchas": [
+            "end_date=null means on-site (active rental), not missing data.",
+        ],
         "path": "/api/v1/order-groups/{id}/",
         "description": "Returns a single order group (booking) by ID with full details.",
         "method": "GET",
         "requires_id": True,
     },
     "api_v1_order_groups_removal_checkout_list": {
+        "entity": "OrderGroup",
+        "gotchas": [
+            "Removal checkout flow — creates removal/pickup orders, not standard service orders.",
+        ],
         "path": "/api/v1/order-groups/{order_group_id}/removal-checkout/",
         "description": (
             "Returns checkout preview for removing/cancelling a service from an order group. "
@@ -533,6 +728,10 @@ MCP_TOOL_CATALOG = {
         "requires_id": True,
     },
     "api_v1_order_groups_swap_checkout_list": {
+        "entity": "OrderGroup",
+        "gotchas": [
+            "Swap checkout flow — replaces one SellerProductSellerLocation with another within an existing OrderGroup.",
+        ],
         "path": "/api/v1/order-groups/{order_group_id}/swap-checkout/",
         "description": (
             "Returns checkout preview for swapping a service provider in an order group. "
@@ -545,6 +744,14 @@ MCP_TOOL_CATALOG = {
     # ── ORDERS ────────────────────────────────────────────────────────────────
 
     "api_v1_orders_for_seller_list": {
+        "entity": "Order",
+        "gotchas": [
+            "Cart orders (submitted_on=null) excluded by default — pass `tab=in_cart` to see them.",
+            "`price` returns total_seller_price (supplier payout amount) in this context, NOT the customer price.",
+            "`on_rent` filter maps to order_group__end_date__isnull (null end_date = still on-site).",
+            "`service_date` filter maps to end_date.",
+            "`tab` filter applies complex multi-status logic to bucket orders into workflow tabs.",
+        ],
         "path": "/api/v1/orders-for-seller/",
         "description": (
             "Supplier-facing view only. Returns orders scoped to the authenticated seller's own incoming orders. "
@@ -552,15 +759,34 @@ MCP_TOOL_CATALOG = {
             "Use this only from the supplier side to see their own delivery schedule or incoming order queue."
         ),
         "filters": "id, order_group, status, code, seller_location, seller, product_category, on_rent, tab, order_type, service_date_after, service_date_before, assignment, search, allow_all",
+        "filter_enums": {
+            "status": ["PENDING", "SCHEDULED", "COMPLETE", "CANCELLED", "ADMIN_APPROVAL_PENDING", "ADMIN_APPROVAL_DECLINED", "CREDIT_APPLICATION_APPROVAL_PENDING", "CREDIT_APPLICATION_DECLINED"],
+            "order_type": ["DELIVERY", "PICKUP", "RETURN", "SWAP", "REMOVAL", "AUTO_RENEWAL", "ONE_TIME"],
+            "tab": ["new", "scheduled", "history", "in_cart", "cancelled"],
+            "assignment": ["initial", "reassigning", "needs_sourcing"],
+        },
         "method": "GET",
     },
     "api_v1_orders_for_seller_get": {
+        "entity": "Order",
+        "gotchas": [
+            "`price` returns total_seller_price (supplier payout amount), NOT customer price.",
+        ],
         "path": "/api/v1/orders-for-seller/{id}/",
         "description": "Returns a single seller-facing order by ID.",
         "method": "GET",
         "requires_id": True,
     },
     "api_v1_orders_list": {
+        "entity": "Order",
+        "gotchas": [
+            "Default ordering is -end_date (most recent service date first), NOT created_on.",
+            "`date` / `date_before` / `date_after` filters map to end_date (service date), not created_on.",
+            "`submitted_on` boolean filter is inverted: `submitted_on=true` returns UNSUBMITTED (in-cart) orders where submitted_on IS NULL.",
+            "`account_owner` field is the sales rep User FK set at order creation time — NOT the customer. Use 'user' or join user_address→user_group for the customer.",
+            "Order statuses ADMIN_APPROVAL_PENDING, CREDIT_APPLICATION_APPROVAL_PENDING, NO_PAYMENT_METHOD = placed but blocked — not yet fulfillable.",
+            "The API paginates at 100 rows/page. The agent fetch loop has its own cap (MAX_FETCH_ROWS) — always pass date_after to reduce total result set size for historical analysis.",
+        ],
         "path": "/api/v1/orders/",
         "description": (
             "Primary platform-wide order data source. Returns all orders (buyer perspective). "
@@ -572,9 +798,18 @@ MCP_TOOL_CATALOG = {
             "date_after/date_before filter on end_date (service date), not created_on."
         ),
         "filters": "id, order_group, submitted_on, date_after, date_before, code, status, type, user_group, user_address, seller",
+        "filter_enums": {
+            "status": ["PENDING", "SCHEDULED", "COMPLETE", "CANCELLED", "ADMIN_APPROVAL_PENDING", "ADMIN_APPROVAL_DECLINED", "CREDIT_APPLICATION_APPROVAL_PENDING", "CREDIT_APPLICATION_DECLINED"],
+            "type": ["DELIVERY", "PICKUP", "RETURN", "SWAP", "REMOVAL", "AUTO_RENEWAL", "ONE_TIME"],
+        },
         "method": "GET",
     },
     "api_v1_orders_internal_sales_data_list": {
+        "entity": "Order",
+        "gotchas": [
+            "Staff/internal endpoint returning sales data annotations on orders.",
+            "`account_owner` is the sales rep, not the customer.",
+        ],
         "path": "/api/v1/orders/internal/sales-data/",
         "description": (
             "Internal sales dashboard data for the current calendar month. "
@@ -587,6 +822,11 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_orders_get": {
+        "entity": "Order",
+        "gotchas": [
+            "`account_owner` is the sales rep, not the customer.",
+            "Submitted orders cannot be deleted — perform_destroy raises PermissionDenied.",
+        ],
         "path": "/api/v1/orders/{id}/",
         "description": "Returns a single order by ID with full details.",
         "method": "GET",
@@ -596,6 +836,10 @@ MCP_TOOL_CATALOG = {
     # ── PAYMENT METHODS ───────────────────────────────────────────────────────
 
     "api_v1_payment_methods_list": {
+        "entity": "PaymentMethod",
+        "gotchas": [
+            "Scoped via list_payment_methods_for_user — returns only payment methods accessible to the authenticated user.",
+        ],
         "path": "/api/v1/payment-methods/",
         "description": (
             "Returns payment methods on file for the authenticated user group. "
@@ -605,6 +849,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_payment_methods_get": {
+        "entity": "PaymentMethod",
         "path": "/api/v1/payment-methods/{id}/",
         "description": "Returns a single payment method by ID.",
         "method": "GET",
@@ -614,6 +859,10 @@ MCP_TOOL_CATALOG = {
     # ── PAYOUTS ───────────────────────────────────────────────────────────────
 
     "api_v1_payouts_list": {
+        "entity": "Payout",
+        "gotchas": [
+            "Staff must pass `allow_all=true` to see payouts across all sellers; default scopes to the user's own seller.",
+        ],
         "path": "/api/v1/payouts/",
         "description": (
             "Returns payouts to sellers (supplier payments) visible to the authenticated context. "
@@ -627,6 +876,10 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_payouts_metrics_list": {
+        "entity": "Payout",
+        "gotchas": [
+            "Uses Order.objects.for_seller_user() — scoped to the seller user's orders.",
+        ],
         "path": "/api/v1/payouts/metrics/",
         "description": (
             "Returns aggregate payout metrics for the current scope: "
@@ -637,6 +890,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_payouts_get": {
+        "entity": "Payout",
         "path": "/api/v1/payouts/{id}/",
         "description": "Returns a single payout record by ID.",
         "method": "GET",
@@ -646,6 +900,7 @@ MCP_TOOL_CATALOG = {
     # ── PUBLIC LOCATION PAGES ─────────────────────────────────────────────────
 
     "api_v1_public_location_pages_list": {
+        "entity": "PublicLocationPage",
         "path": "/api/v1/public/location-pages/",
         "description": (
             "Returns public-facing SEO location pages for Downstream's US city coverage. "
@@ -656,6 +911,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_public_location_pages_get": {
+        "entity": "PublicLocationPage",
         "path": "/api/v1/public/location-pages/{state_slug}/{city_slug}/",
         "description": "Returns the public location page for a specific city by state and city slug.",
         "method": "GET",
@@ -665,6 +921,7 @@ MCP_TOOL_CATALOG = {
     # ── RBAC ──────────────────────────────────────────────────────────────────
 
     "api_v1_rbac_role_templates_list": {
+        "entity": "RBACRoleTemplate",
         "path": "/api/v1/rbac/role-templates/",
         "description": (
             "Returns hard-coded role templates (Admin, Member, View-Only, etc.) that can be used when creating account roles. "
@@ -674,6 +931,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_rbac_roles_list": {
+        "entity": "RBACRole",
         "path": "/api/v1/rbac/roles/",
         "description": (
             "Returns custom roles defined within the current account (user group). "
@@ -683,6 +941,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_rbac_scopes_list": {
+        "entity": "RBACScope",
         "path": "/api/v1/rbac/scopes/",
         "description": (
             "Returns all available permission scopes that can be assigned to roles. "
@@ -695,6 +954,13 @@ MCP_TOOL_CATALOG = {
     # ── SELLER DASHBOARD ──────────────────────────────────────────────────────
 
     "api_v1_seller_dashboard_metrics_list": {
+        "entity": "Aggregated:SellerDashboard",
+        "gotchas": [
+            "Requires both `start_date` and `end_date` query params.",
+            "Only submitted orders (submitted_on__isnull=False) — in-cart excluded.",
+            "Revenue figures use total_seller_price (supplier payout amount), not customer price.",
+            "Returns top-N entries with an 'Other' rollup bucket for the remainder.",
+        ],
         "path": "/api/v1/seller-dashboard/metrics/",
         "description": (
             "Returns aggregated metrics for a seller's dashboard view: "
@@ -709,6 +975,10 @@ MCP_TOOL_CATALOG = {
     # ── SELLER LOCATIONS ──────────────────────────────────────────────────────
 
     "api_v1_seller_locations_list": {
+        "entity": "SellerLocation",
+        "gotchas": [
+            "Seller users see only their own seller's locations by default; customer read access requires `allow_all=true`.",
+        ],
         "path": "/api/v1/seller-locations/",
         "description": (
             "Primary source for geographic supplier analysis. "
@@ -719,9 +989,13 @@ MCP_TOOL_CATALOG = {
             "Pass allow_all=true to see all locations platform-wide."
         ),
         "filters": "id, seller, allow_all, search, latitude, longitude, radius, zoom_level, open, pickup, exclude_ds, product_category, active_only, status",
+        "filter_enums": {
+            "status": ["compliant", "insurance", "tax", "insurance_expiring", "payouts"],
+        },
         "method": "GET",
     },
     "api_v1_seller_locations_get": {
+        "entity": "SellerLocation",
         "path": "/api/v1/seller-locations/{id}/",
         "description": "Returns a single seller location by ID with full details including open hours.",
         "method": "GET",
@@ -731,6 +1005,11 @@ MCP_TOOL_CATALOG = {
     # ── SELLER PRODUCT SELLER LOCATIONS ───────────────────────────────────────
 
     "api_v1_seller_product_seller_locations_list": {
+        "entity": "SellerProductSellerLocation",
+        "gotchas": [
+            "SPSL = the join of SellerProduct × SellerLocation — represents a specific product listed at a specific supplier location.",
+            "List is scoped to the seller user's locations by default.",
+        ],
         "path": "/api/v1/seller-product-seller-locations/",
         "description": (
             "Returns seller-product-at-location listings (the inventory of which products each seller location offers). "
@@ -740,9 +1019,16 @@ MCP_TOOL_CATALOG = {
             "or count active product listings per market."
         ),
         "filters": "id, seller, seller_product, product, main_product_category, main_product, seller_location, search, status, allow_all",
+        "filter_enums": {
+            "status": ["active", "inactive", "needs_attention"],
+        },
         "method": "GET",
     },
     "api_v1_seller_product_seller_locations_metrics_list": {
+        "entity": "SellerProductSellerLocation",
+        "gotchas": [
+            "Returns aggregate counts (active, needs_attention, inactive) for SPSL listings — not individual records.",
+        ],
         "path": "/api/v1/seller-product-seller-locations/metrics/",
         "description": (
             "Returns performance metrics for seller-product-at-location listings: "
@@ -753,6 +1039,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_seller_product_seller_locations_get": {
+        "entity": "SellerProductSellerLocation",
         "path": "/api/v1/seller-product-seller-locations/{id}/",
         "description": "Returns a single seller-product-at-location listing by ID.",
         "method": "GET",
@@ -762,6 +1049,10 @@ MCP_TOOL_CATALOG = {
     # ── SELLER PRODUCTS ───────────────────────────────────────────────────────
 
     "api_v1_seller_products_list": {
+        "entity": "SellerProduct",
+        "gotchas": [
+            "Non-staff users only see products belonging to their own seller; staff must pass `allow_all=true`.",
+        ],
         "path": "/api/v1/seller-products/",
         "description": (
             "Returns seller products (a seller's specific product offerings, mapped to main products). "
@@ -774,6 +1065,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_seller_products_get": {
+        "entity": "SellerProduct",
         "path": "/api/v1/seller-products/{id}/",
         "description": "Returns a single seller product by ID.",
         "method": "GET",
@@ -783,15 +1075,26 @@ MCP_TOOL_CATALOG = {
     # ── SELLER INVOICE PAYABLES ───────────────────────────────────────────────
 
     "api_v1_sellerinvoicepayable_list": {
+        "entity": "SellerInvoicePayable",
+        "gotchas": [
+            "AP automation viewset. Exception queue status values: ESCALATED, DISPUTED, ERROR.",
+            "Scoped to the acting user's seller.",
+        ],
         "path": "/api/v1/sellerinvoicepayable/",
         "description": (
             "Returns invoices payable by the authenticated seller to Downstream (AP side). "
             "Use this for supplier accounts-payable tracking or outstanding seller liabilities."
         ),
         "filters": "seller_location, status, received_date_after, received_date_before, due_date_after, due_date_before, amount_min, amount_max, ocr_status, ingestion_source, has_variance, seller_id",
+        "filter_enums": {
+            "status": ["PENDING_OCR", "OCR_FAILED", "PENDING_MATCH", "PENDING_VALIDATION", "AUTO_APPROVED", "READY_FOR_PAYOUT", "ESCALATED", "HUMAN_APPROVED", "DISPUTED", "ERROR", "PAID", "UNPAID"],
+            "ocr_status": ["pending", "processing", "completed", "failed"],
+            "ingestion_source": ["MANUAL", "STABLE_MAIL", "ZOHO_EMAIL"],
+        },
         "method": "GET",
     },
     "api_v1_sellerinvoicepayable_get": {
+        "entity": "SellerInvoicePayable",
         "path": "/api/v1/sellerinvoicepayable/{id}/",
         "description": "Returns a single seller invoice payable by ID.",
         "method": "GET",
@@ -801,6 +1104,11 @@ MCP_TOOL_CATALOG = {
     # ── SELLERS ───────────────────────────────────────────────────────────────
 
     "api_v1_sellers_list": {
+        "entity": "Seller",
+        "gotchas": [
+            "Seller has no city/state/zip fields — geographic data lives on SellerLocation. Geographic queries against this endpoint will always produce wrong results; use api_v1_seller_locations_list instead.",
+            "A single Seller can have many SellerLocations (one per service area).",
+        ],
         "path": "/api/v1/sellers/",
         "description": (
             "Returns company-level seller records. "
@@ -813,6 +1121,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_sellers_get": {
+        "entity": "Seller",
         "path": "/api/v1/sellers/{id}/",
         "description": "Returns a single seller by ID with full details.",
         "method": "GET",
@@ -822,6 +1131,10 @@ MCP_TOOL_CATALOG = {
     # ── SETUP INTENTS / STRIPE ────────────────────────────────────────────────
 
     "api_v1_setup_intents_list": {
+        "entity": "StripeSetupIntent",
+        "gotchas": [
+            "Uses request.user.stripe_customer_id — user-level, not UserGroup-level. Different users in the same account have separate Stripe customers.",
+        ],
         "path": "/api/v1/setup-intents/",
         "description": (
             "Returns Stripe SetupIntents for the authenticated user group (used to add payment methods). "
@@ -831,6 +1144,10 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_stripe_payment_methods_list": {
+        "entity": "StripePaymentMethod",
+        "gotchas": [
+            "Uses request.user.stripe_customer_id — user-level, not UserGroup-level.",
+        ],
         "path": "/api/v1/stripe/payment-methods/",
         "description": (
             "Returns Stripe payment method objects for the authenticated account. "
@@ -845,6 +1162,7 @@ MCP_TOOL_CATALOG = {
     # ── TIME SLOTS ────────────────────────────────────────────────────────────
 
     "api_v1_time_slots_list": {
+        "entity": "TimeSlot",
         "path": "/api/v1/time-slots/",
         "description": (
             "Returns available delivery/pickup time slots offered by sellers. "
@@ -856,6 +1174,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_time_slots_get": {
+        "entity": "TimeSlot",
         "path": "/api/v1/time-slots/{id}/",
         "description": "Returns a single time slot by ID.",
         "method": "GET",
@@ -865,6 +1184,7 @@ MCP_TOOL_CATALOG = {
     # ── USER ADDRESS TYPES ────────────────────────────────────────────────────
 
     "api_v1_user_address_types_list": {
+        "entity": "UserAddressType",
         "path": "/api/v1/user-address-types/",
         "description": (
             "Returns lookup types for user addresses (job sites). "
@@ -875,6 +1195,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_user_address_types_get": {
+        "entity": "UserAddressType",
         "path": "/api/v1/user-address-types/{id}/",
         "description": "Returns a single user address type by ID.",
         "method": "GET",
@@ -884,6 +1205,11 @@ MCP_TOOL_CATALOG = {
     # ── USER ADDRESSES (JOB SITES) ────────────────────────────────────────────
 
     "api_v1_user_addresses_list": {
+        "entity": "UserAddress",
+        "gotchas": [
+            "UserAddress = a job site / project location, NOT a billing or mailing address.",
+            "One UserGroup has many UserAddresses.",
+        ],
         "path": "/api/v1/user-addresses/",
         "description": (
             "Returns user addresses (job sites / project locations) accessible to the authenticated user. "
@@ -892,9 +1218,16 @@ MCP_TOOL_CATALOG = {
             "count active projects per account, or get site IDs for order filtering."
         ),
         "filters": "id, search, state, city, product_category, is_archived, active_only, latitude, longitude, radius, zoom_level, user_group, user, status, suppliers",
+        "filter_enums": {
+            "status": ["upcoming", "complete"],
+        },
         "method": "GET",
     },
     "api_v1_user_addresses_filter_options_list": {
+        "entity": "UserAddress",
+        "gotchas": [
+            "Returns filter option enumerations (states, cities, brands, categories, suppliers) for the job site list UI — not UserAddress records.",
+        ],
         "path": "/api/v1/user-addresses/filter_options/",
         "description": (
             "Returns available filter options for the user addresses (job sites) list. "
@@ -904,12 +1237,20 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_user_addresses_get": {
+        "entity": "UserAddress",
+        "gotchas": [
+            "UserAddress = a job site / project location, NOT a billing or mailing address.",
+        ],
         "path": "/api/v1/user-addresses/{id}/",
         "description": "Returns a single user address (job site) by ID.",
         "method": "GET",
         "requires_id": True,
     },
     "api_v1_user_addresses_recommendations_list": {
+        "entity": "UserAddressRecommendation",
+        "gotchas": [
+            "Returns active staged recommendations for a specific UserAddress (project). Generated asynchronously — may take up to 30 seconds after project creation to appear.",
+        ],
         "path": "/api/v1/user-addresses/{id}/recommendations/",
         "description": (
             "Returns active product recommendations staged for a specific job site (UserAddress). "
@@ -923,6 +1264,10 @@ MCP_TOOL_CATALOG = {
     # ── USER GROUP ADMIN APPROVALS ────────────────────────────────────────────
 
     "api_v1_user_group_admin_approval_user_invite_list": {
+        "entity": "UserGroupAdminApprovalUserInvite",
+        "gotchas": [
+            "Scoped to the user's user_group by default; superuser with `allow_all=true` sees all.",
+        ],
         "path": "/api/v1/user-group-admin-approval-user-invite/",
         "description": (
             "Returns pending user invite approval requests for accounts that require admin approval to add new users. "
@@ -933,6 +1278,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_user_group_admin_approval_user_invite_get": {
+        "entity": "UserGroupAdminApprovalUserInvite",
         "path": "/api/v1/user-group-admin-approval-user-invite/{id}/",
         "description": "Returns a single user invite approval request by ID.",
         "method": "GET",
@@ -942,6 +1288,10 @@ MCP_TOOL_CATALOG = {
     # ── USER GROUP CREDIT APPLICATIONS ────────────────────────────────────────
 
     "api_v1_user_group_credit_applications_list": {
+        "entity": "UserGroupCreditApplication",
+        "gotchas": [
+            "Scoped to request.user.user_group_id — users without a user_group get an empty queryset.",
+        ],
         "path": "/api/v1/user-group-credit-applications/",
         "description": (
             "Returns net-terms (trade credit) applications associated with the authenticated account. "
@@ -951,6 +1301,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_user_group_credit_applications_get": {
+        "entity": "UserGroupCreditApplication",
         "path": "/api/v1/user-group-credit-applications/{id}/",
         "description": "Returns a single credit application by ID.",
         "method": "GET",
@@ -960,6 +1311,15 @@ MCP_TOOL_CATALOG = {
     # ── USER GROUPS (ACCOUNTS) ────────────────────────────────────────────────
 
     "api_v1_user_groups_list": {
+        "entity": "UserGroup",
+        "gotchas": [
+            "UserGroup = a customer account (company). NOT an individual user.",
+            "UserGroup.seller being set (OneToOne FK) means this is a SUPPLIER account, not a customer.",
+            "`account_owner` on UserGroup is the sales rep (User FK), NOT the account's own admin or primary contact.",
+            "Default ordering is by last calendar-month customer spend descending; pass `ordering=biggest_gap` to sort by target_monthly_gmv gap.",
+            "Scoping uses user_groups_user_can_access_q — under impersonation, returns the impersonated user's accessible accounts.",
+            "UserGroup.source = account creation origin (USER-GENERATED, PLANHUB) — NOT the marketing acquisition channel. Marketing channel (GOOGLE, META_ADS, SALES, etc.) lives on User.source. To filter accounts by acquisition channel, fetch api_v1_users_list and join via created_by.",
+        ],
         "path": "/api/v1/user-groups/",
         "description": (
             "Returns accounts (UserGroups / companies) accessible to the authenticated context. "
@@ -972,9 +1332,19 @@ MCP_TOOL_CATALOG = {
             "or rank accounts by spend for prioritization."
         ),
         "filters": "id, search, has_seller, sales_status, lifecycle_status",
+        "filter_enums": {
+            "sales_status": ["icebox", "prospecting", "winback", "managed", "junk"],
+            "lifecycle_status": ["never_ordered", "active", "at_risk", "churned"],
+        },
         "method": "GET",
     },
     "api_v1_user_groups_get": {
+        "entity": "UserGroup",
+        "gotchas": [
+            "`account_owner` is the sales rep, NOT the account admin.",
+            "UserGroup.seller being set means this is a supplier account.",
+            "Expandable fields: seller, account_owner, users, credit_applications, credit_limit_utilized, insurance_summary, latest_policies.",
+        ],
         "path": "/api/v1/user-groups/{user_group_id}/",
         "description": (
             "Returns a single account (UserGroup) by ID with full details. "
@@ -988,6 +1358,11 @@ MCP_TOOL_CATALOG = {
     # ── USER IDENTITY ─────────────────────────────────────────────────────────
 
     "api_v1_user_identity_list": {
+        "entity": "User|IdentityVerificationSession",
+        "gotchas": [
+            "Not a standalone model — combines User fields with IdentityVerificationSession data.",
+            "Do not use this for user listing or cohort analysis; use api_v1_users_list for that.",
+        ],
         "path": "/api/v1/user/identity/",
         "description": (
             "Returns identity verification state for the authenticated user and their account. "
@@ -1000,6 +1375,11 @@ MCP_TOOL_CATALOG = {
     # ── USERS ─────────────────────────────────────────────────────────────────
 
     "api_v1_users_list": {
+        "entity": "User",
+        "gotchas": [
+            "User = an individual person, NOT a company. For customer/account-level analysis always group at UserGroup level, not User level — multiple users from the same company share one UserGroup.",
+            "Cohort and retention analysis partitioned by User will overcount distinct customers; partition by user_group instead.",
+        ],
         "path": "/api/v1/users/",
         "description": (
             "Returns users scoped to the authenticated request context. "
@@ -1009,9 +1389,16 @@ MCP_TOOL_CATALOG = {
         ),
     
         "filters": "id, search, type, has_seller, user_group, user_address, email",
+        "filter_enums": {
+            "type": ["ADMIN", "BILLING", "MEMBER"],
+        },
         "method": "GET",
     },
     "api_v1_users_me_list": {
+        "entity": "User",
+        "gotchas": [
+            "Returns the currently authenticated user. Under impersonation, request.user is the impersonated user — /me returns the impersonated user's data, not the acting staff member.",
+        ],
         "path": "/api/v1/users/me/",
         "description": (
             "Returns the currently authenticated user's full profile. "
@@ -1021,6 +1408,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_users_get": {
+        "entity": "User",
         "path": "/api/v1/users/{user_id}/",
         "description": "Returns a single user by ID.",
         "method": "GET",
@@ -1030,6 +1418,7 @@ MCP_TOOL_CATALOG = {
     # ── WASTE TYPES ───────────────────────────────────────────────────────────
 
     "api_v1_waste_types_list": {
+        "entity": "WasteType",
         "path": "/api/v1/waste-types/",
         "description": (
             "Static reference lookup — returns IDs and names for accepted material categories. "
@@ -1040,6 +1429,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "api_v1_waste_types_get": {
+        "entity": "WasteType",
         "path": "/api/v1/waste-types/{id}/",
         "description": "Returns a single waste type by ID or slug.",
         "method": "GET",
@@ -1049,6 +1439,10 @@ MCP_TOOL_CATALOG = {
     # ── CHECKOUT ──────────────────────────────────────────────────────────────
 
     "checkout_v1_list": {
+        "entity": "Cart",
+        "gotchas": [
+            "Returns a paginated list of Cart objects (not a checkout action). Path /checkout/v1/ is the Cart list view.",
+        ],
         "path": "/checkout/v1/",
         "description": (
             "Returns a paginated list of Cart objects for the authenticated user. "
@@ -1059,6 +1453,11 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "checkout_v1_cart_list": {
+        "entity": "Cart",
+        "gotchas": [
+            "Lists open (non-submitted) Carts. One Cart per UserAddress.",
+            "A submitted Cart (submitted_on set) is a placed order — no longer appears here.",
+        ],
         "path": "/checkout/v1/cart/",
         "description": (
             "Returns the active cart for the authenticated user, structured as CartGroups of CartItems. "
@@ -1068,6 +1467,10 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "checkout_v1_cart_count_list": {
+        "entity": "Cart",
+        "gotchas": [
+            "Returns count of open (non-submitted) Carts only.",
+        ],
         "path": "/checkout/v1/cart/count/",
         "description": (
             "Returns the total number of items in the authenticated user's active cart. "
@@ -1077,6 +1480,10 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "checkout_v1_carts_list": {
+        "entity": "Cart",
+        "gotchas": [
+            "Returns grouped cart DTO with subtotal. allow_staff_all_access=False — staff cannot see all users' carts through this endpoint.",
+        ],
         "path": "/checkout/v1/carts/",
         "description": (
             "Returns a list of carts with lightweight summary data. "
@@ -1086,21 +1493,32 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "checkout_v1_carts_get": {
+        "entity": "Cart",
+        "gotchas": [
+            "Returns grouped cart DTO for a specific UserAddress. allow_staff_all_access=False.",
+        ],
         "path": "/checkout/v1/carts/{cart_id}/",
         "description": "Returns a single cart by ID with full CartGroup and CartItem details.",
         "method": "GET",
         "requires_id": True,
     },
     "checkout_v1_quote_accept_list": {
+        "entity": "CartQuote",
+        "gotchas": [
+            "Accepting a quote transitions the cart toward checkout. Staff actors cannot accept quotes on behalf of users via this endpoint.",
+        ],
         "path": "/checkout/v1/quote/accept/",
         "description": (
             "Returns the result of accepting a quote (converting a quote to a confirmed order). "
             "Use this to trigger quote acceptance in the checkout flow."
         ),
-    
-        "method": "GET",
+        "method": "POST",
     },
     "checkout_v1_quote_get": {
+        "entity": "CartQuote",
+        "gotchas": [
+            "Quote is stored as a JSON blob on Cart.quote — not a separate model. Fields: to_emails, quote_expiration.",
+        ],
         "path": "/checkout/v1/quote/{cart_id}/",
         "description": (
             "Price preview tool. Shows itemized cost before a buyer completes a purchase: "
@@ -1110,6 +1528,10 @@ MCP_TOOL_CATALOG = {
         "requires_id": True,
     },
     "checkout_v1_get": {
+        "entity": "Cart",
+        "gotchas": [
+            "Returns a single Cart object by ID. Path /checkout/v1/<id>/ is the Cart detail view.",
+        ],
         "path": "/checkout/v1/{id}/",
         "description": "Returns a single cart by ID.",
         "method": "GET",
@@ -1119,6 +1541,10 @@ MCP_TOOL_CATALOG = {
     # ── EXPLORE / SEARCH ──────────────────────────────────────────────────────
 
     "explore_v1_main_product_match_list": {
+        "entity": "MainProduct",
+        "gotchas": [
+            "Returns MainProduct matches for a query — not Product (variant/SKU) records.",
+        ],
         "path": "/explore/v1/main-product/match/",
         "description": (
             "Add-on configurator for the shop flow. "
@@ -1129,6 +1555,12 @@ MCP_TOOL_CATALOG = {
         "method": "POST",
     },
     "explore_v1_search_list": {
+        "entity": "MainProduct|MainProductCategory|MainProductCategoryGroup",
+        "gotchas": [
+            "AllowAny permission — no authentication required.",
+            "Results cached for 1 hour.",
+            "Searches across MainProduct, MainProductCategory, and MainProductCategoryGroup — not order or transaction data.",
+        ],
         "path": "/explore/v1/search/",
         "description": (
             "Full-text search over the Downstream product catalog: MainProducts, MainProductCategories, MainProductCategoryGroups. "
@@ -1146,6 +1578,10 @@ MCP_TOOL_CATALOG = {
     # ── FINANCIAL ACCOUNTS ────────────────────────────────────────────────────
 
     "financial_accounts_v1_financial_connection_account_list": {
+        "entity": "FinancialConnectionAccount",
+        "gotchas": [
+            "Scoped to the user's user_group if they have one; otherwise scoped to the user directly.",
+        ],
         "path": "/financial-accounts/v1/financial-connection-account/",
         "description": (
             "Returns Plaid-linked financial connection accounts (bank accounts) for the authenticated user group. "
@@ -1155,12 +1591,14 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "financial_accounts_v1_financial_connection_account_get": {
+        "entity": "FinancialConnectionAccount",
         "path": "/financial-accounts/v1/financial-connection-account/{id}/",
         "description": "Returns a single financial connection account by ID.",
         "method": "GET",
         "requires_id": True,
     },
     "financial_accounts_v1_financial_statement_list": {
+        "entity": "FinancialStatement",
         "path": "/financial-accounts/v1/financial-statement/",
         "description": (
             "Returns financial statements (bank transaction data) for connected accounts via Plaid. "
@@ -1170,6 +1608,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "financial_accounts_v1_financial_statement_get": {
+        "entity": "FinancialStatement",
         "path": "/financial-accounts/v1/financial-statement/{id}/",
         "description": "Returns a single financial statement by ID.",
         "method": "GET",
@@ -1179,6 +1618,10 @@ MCP_TOOL_CATALOG = {
     # ── MATCHING ENGINE ───────────────────────────────────────────────────────
 
     "matching_engine_v1_product_match_list": {
+        "entity": "SellerProductSellerLocation",
+        "gotchas": [
+            "POST endpoint. Supply `main_product` ID plus optional `main_product_add_on_choices`. Returns matched SellerProductSellerLocation records — supplier-product-location combinations, not abstract MainProduct records.",
+        ],
         "path": "/matching-engine/v1/product-match/",
         "description": (
             "Returns supplier matches for a given product request. "
@@ -1190,6 +1633,10 @@ MCP_TOOL_CATALOG = {
         "method": "POST",
     },
     "matching_engine_v1_seller_product_seller_locations_by_lat_long_list": {
+        "entity": "SellerProductSellerLocation",
+        "gotchas": [
+            "Geospatial SPSL lookup by latitude/longitude — returns listings near a given coordinate.",
+        ],
         "path": "/matching-engine/v1/seller-product-seller-locations-by-lat-long/",
         "description": (
             "Returns supplier matches for a product request using lat/long coordinates instead of address. "
@@ -1204,6 +1651,7 @@ MCP_TOOL_CATALOG = {
     # ── NOTIFICATIONS ─────────────────────────────────────────────────────────
 
     "notifications_v1_push_notifications_list": {
+        "entity": "PushNotification",
         "path": "/notifications/v1/push-notifications/",
         "description": (
             "Returns push notification records sent to the authenticated user. "
@@ -1213,6 +1661,7 @@ MCP_TOOL_CATALOG = {
         "method": "GET",
     },
     "notifications_v1_push_notifications_get": {
+        "entity": "PushNotification",
         "path": "/notifications/v1/push-notifications/{id}/",
         "description": "Returns a single push notification by ID.",
         "method": "GET",
@@ -1222,6 +1671,11 @@ MCP_TOOL_CATALOG = {
     # ── PRICING ENGINE ────────────────────────────────────────────────────────
 
     "pricing_engine_v1_seller_product_seller_location_pricing_by_lat_long_list": {
+        "entity": "SellerProductSellerLocation",
+        "gotchas": [
+            "Pricing lookup by lat/long instead of user_address ID — used for unauthenticated or pre-address-creation pricing estimates.",
+            "Returns computed pricing only — not a stored record.",
+        ],
         "path": "/pricing-engine/v1/seller-product-seller-location-pricing-by-lat-long/",
         "description": (
             "Returns pricing for a specific seller-product-at-location listing, calculated for delivery to given coordinates. "
@@ -1233,6 +1687,11 @@ MCP_TOOL_CATALOG = {
         "method": "POST",
     },
     "pricing_engine_v1_seller_product_seller_location_pricing_list": {
+        "entity": "SellerProductSellerLocation",
+        "gotchas": [
+            "POST endpoint. Requires: seller_product_seller_location, user_address, waste_type, start_date, end_date, times_per_week, shift_count.",
+            "Returns computed pricing for a specific SPSL at a specific job site — not a stored record.",
+        ],
         "path": "/pricing-engine/v1/seller-product-seller-location-pricing/",
         "description": (
             "Returns pricing for a specific seller-product-at-location listing, calculated for delivery to a given address. "
@@ -1243,6 +1702,10 @@ MCP_TOOL_CATALOG = {
         "method": "POST",
     },
     "pricing_engine_v1_supplier_insights_list": {
+        "entity": "SellerLocation",
+        "gotchas": [
+            "Returns insights aggregated per SellerLocation — performance and pricing signals scoped to a supplier's specific service location.",
+        ],
         "path": "/pricing-engine/v1/supplier-insights/",
         "description": (
             "Local market competitiveness check for a single buyer address. "
@@ -1255,6 +1718,11 @@ MCP_TOOL_CATALOG = {
     # ── IMPERSONATION ─────────────────────────────────────────────────────────
 
     "impersonation_start": {
+        "entity": "User",
+        "gotchas": [
+            "Staff-only. After impersonation starts: request.user = impersonated user, request.auth = acting staff.",
+            "All scoped endpoints will return data as seen by the impersonated user.",
+        ],
         "path": None,
         "description": (
             "Start impersonating a specific user by UUID. "
@@ -1264,6 +1732,10 @@ MCP_TOOL_CATALOG = {
         "method": "POST",
     },
     "impersonation_end": {
+        "entity": "User",
+        "gotchas": [
+            "Ends impersonation session. Restores request.user to the acting staff user.",
+        ],
         "path": None,
         "description": (
             "Stop impersonating the current user and revert to normal authentication. "
@@ -1272,6 +1744,10 @@ MCP_TOOL_CATALOG = {
         "method": "POST",
     },
     "impersonation_status": {
+        "entity": "User",
+        "gotchas": [
+            "Under active impersonation, request.user is the impersonated user — check request.auth (not request.user) to identify the acting staff member.",
+        ],
         "path": None,
         "description": (
             "Check whether impersonation is currently active and which user is being impersonated. "

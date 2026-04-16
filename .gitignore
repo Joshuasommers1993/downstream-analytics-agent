@@ -17,3 +17,5 @@ env/
 
 # ChromaDB vector index (regeneratable)
 schema_db/
+
+.DS_store

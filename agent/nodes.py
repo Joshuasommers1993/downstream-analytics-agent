@@ -10,9 +10,14 @@ Architecture (3 active nodes):
 """
 
 import os
+import re
 import json
 import uuid
+import atexit
+import shutil
 import textwrap
+import glob as _glob
+from datetime import datetime, timezone
 import pandas as pd
 import duckdb
 from dotenv import load_dotenv
@@ -31,6 +36,18 @@ console = Console()
 
 SESSION_DIR = f"/tmp/analytics_session_{uuid.uuid4().hex[:8]}"
 os.makedirs(SESSION_DIR, exist_ok=True)
+
+# Clean up this session's temp dir on exit
+atexit.register(shutil.rmtree, SESSION_DIR, True)
+
+# Clean up stale sessions older than 2 hours from previous crashed runs
+_stale_cutoff = datetime.now(timezone.utc).timestamp() - 2 * 3600
+for _stale in _glob.glob("/tmp/analytics_session_*"):
+    try:
+        if os.path.getmtime(_stale) < _stale_cutoff:
+            shutil.rmtree(_stale, ignore_errors=True)
+    except OSError:
+        pass
 
 # ─────────────────────────────────────────────
 # LLM
@@ -71,49 +88,126 @@ def _headers_for(path: str) -> dict:
         return _INSIGHT_HEADERS
     return _API_HEADERS
 
-MAX_FETCH_ROWS = 10_000     # cap to avoid multi-minute fetches on large tables
+MAX_FETCH_ROWS = 100_000    # cap to avoid multi-minute fetches on large tables
 
-def fetch_all_pages(path: str, params: dict | None = None) -> list[dict]:
-    """Fetch all pages from a cursor-paginated Downstream API endpoint."""
-    rows: list[dict] = []
-    query = dict(params or {})
-    query["limit"] = 100
+# Measured throughput: ~100 rows per request, ~0.9s per request
+# NOTE: Downstream API uses cursor-based pagination (starting_after), not offset-based.
+# Parallel fetching is not possible — the API ignores offset= and always returns from the start.
+_ROWS_PER_PAGE = 100
+_SECS_PER_PAGE = 0.9
+
+
+def _preflight_check(path: str, params: dict, has_filters: bool) -> int | None:
+    """
+    Fire limit=1 probe(s) to get server-side count before a full fetch.
+
+    When filters are present, fires two probes:
+      1. with filters    → count_filtered
+      2. without filters → count_unfiltered
+
+    If count_filtered == count_unfiltered, the API silently ignored the filter
+    (unknown param) — warns the agent so it can correct the filter key.
+
+    Returns the filtered count (or unfiltered if no filters), or None if the
+    API doesn't expose a count field (e.g. insight-hub summary endpoints).
+    """
+
+    def _probe(probe_params: dict) -> int | None:
+        try:
+            resp = requests.get(
+                f"{_API_BASE}{path}",
+                headers=_headers_for(path),
+                params={**probe_params, "limit": 1},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            console.print(f"[dim green]  → Pre-flight failed ({e}), proceeding without count estimate.[/]")
+            return None
+        if not isinstance(data, dict):
+            return None
+        for key in ("count", "total", "num_results", "total_count"):
+            val = data.get(key)
+            if isinstance(val, int):
+                return val
+        return None
+
+    count = _probe(params)
+    if count is None:
+        return None  # bare array or summary endpoint — skip
+
+    # If filters were passed, also probe without them to detect silent no-ops
+    if has_filters:
+        count_unfiltered = _probe({})
+        if count_unfiltered is not None and count == count_unfiltered:
+            filter_keys = ", ".join(k for k in params)
+            console.print(f"[bold yellow]  ⚠ Pre-flight: filtered count ({count:,}) == unfiltered count ({count_unfiltered:,}) — filter param(s) [{filter_keys}] may not be recognized by this endpoint and are being silently ignored.[/]")
+        elif count == 0:
+            console.print(f"[bold yellow]  ⚠ Pre-flight: 0 rows with current filters — no matching data or filters are too restrictive.[/]")
+
+    # Estimate fetch time (sequential cursor pagination)
+    pages = max(1, -(-min(count, MAX_FETCH_ROWS) // _ROWS_PER_PAGE))
+    est_secs = pages * _SECS_PER_PAGE
+    est_str = f"~{est_secs:.0f}s" if est_secs < 60 else f"~{est_secs/60:.1f}min"
+
+    if count >= MAX_FETCH_ROWS:
+        console.print(f"[bold yellow]  ⚠ Pre-flight: {count:,} rows — will hit {MAX_FETCH_ROWS:,}-row cap. Add filters to narrow the dataset. Estimated fetch time: {est_str}[/]")
+    else:
+        console.print(f"[green]  → Pre-flight: {count:,} rows — estimated fetch time {est_str}[/]")
+
+    return count
+
+
+def _extract_page(data: dict | list) -> list[dict] | None:
+    """Extract the row list from an API response envelope. Returns None for single-object responses."""
+    if isinstance(data, list):
+        return data
+    for list_key in ("data", "results", "rows"):
+        if list_key in data and isinstance(data[list_key], list):
+            return data[list_key]
+    # Fall back: first list value (covers insight-hub custom keys)
+    for value in data.values():
+        if isinstance(value, list):
+            return value
+    return None  # single-object response
+
+
+def fetch_all_pages(path: str, params: dict | None = None, total_count: int | None = None) -> list[dict]:
+    """
+    Fetch all rows from a Downstream API endpoint using cursor-based pagination.
+
+    The Downstream API uses starting_after cursor pagination — offset-based parallel
+    fetching is not possible as the API ignores the offset param and always returns
+    from the beginning.
+    """
+    params = dict(params or {})
     headers = _headers_for(path)
+    rows = []
+    query = {**params, "limit": _ROWS_PER_PAGE}
 
     while True:
         resp = requests.get(f"{_API_BASE}{path}", headers=headers, params=query, timeout=30)
         resp.raise_for_status()
         data = resp.json()
 
-        if isinstance(data, list):
-            # Bare array response
-            rows.extend(data)
-            break
-
-        # Try known paginated list keys first
-        page = None
-        for list_key in ("data", "results", "rows"):
-            if list_key in data and isinstance(data[list_key], list):
-                page = data[list_key]
-                break
-
-        # Fall back: scan all values for the first non-empty list
-        # (covers insight-hub custom keys: months, states, categories, etc.)
-        if page is None:
-            for value in data.values():
-                if isinstance(value, list):
-                    page = value
-                    break
+        page = _extract_page(data)
 
         if page is None:
             # Single-object response — wrap as one row
             rows.append(data)
             break
 
+        if isinstance(data, list):
+            rows.extend(data)
+            break
+
         rows.extend(page)
 
         if len(rows) >= MAX_FETCH_ROWS:
-            break       # cap reached - return what we have so far
+            import warnings
+            warnings.warn(f"fetch_all_pages: hit {MAX_FETCH_ROWS} row cap for {path}. Results are incomplete.")
+            break
 
         if not data.get("has_more") or not page:
             break
@@ -156,9 +250,23 @@ def get_mcp_tools():
 # ─────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────
+_step_start_times: dict[str, float] = {}
+
+
 def _print_step(title: str, color: str, body: str = ""):
+    import time
+    ts = datetime.now().strftime("%H:%M:%S")
+
+    # Print elapsed time since the previous step
+    if _step_start_times:
+        last_key = next(reversed(_step_start_times))
+        elapsed = time.time() - _step_start_times[last_key]
+        console.print(f"[dim]  ↳ {last_key} took {elapsed:.1f}s[/]")
+
+    _step_start_times[title] = time.time()
+
     console.print(f"\n[bold {color}]{'━'*60}[/]")
-    console.print(f"[bold {color}]{title}[/]")
+    console.print(f"[bold {color}]{title}[/]  [dim]{ts}[/]")
     if body:
         console.print(f"[dim]{textwrap.fill(body, width=70)}[/]")
 
@@ -181,20 +289,31 @@ def reasoning_node(state: AgentState) -> AgentState:
     # ── First call: build the full FETCH/COMPUTE plan ─────────────────────────
     if not state["logic_sentences"]:
 
-        # Stage 1: downstream agent selects relevant tools
+        # Stage 1: downstream agent selects relevant tools + emits analytical reasoning
         console.print("[blue]  → Stage 1: asking downstream agent for relevant tools...[/]")
-        focused_tools = get_relevant_tools(state["question"], top_k=8)
+        focused_tools, stage1_reasoning = get_relevant_tools(state["question"], top_k=8)
 
         # Print selected tool names
         for line in focused_tools.splitlines():
             stripped = line.strip()
             if stripped and not stripped.startswith("->"):
                 console.print(f"[blue]     {stripped}[/]")
-            elif stripped.startswith("->"):
-                console.print(f"[dim]       {stripped}[/]")
+
+        if stage1_reasoning:
+            console.print(f"\n[bold blue]  💬 Stage 1 analytical reasoning:[/]")
+            console.print(Panel(stage1_reasoning, style="blue dim", padding=(0, 2)))
 
         # Stage 2: build FETCH/COMPUTE plan with SQL embedded in COMPUTE steps
         console.print("[blue]  → Stage 2: building execution plan with SQL...[/]")
+
+        # Inject Stage 1 analytical plan if present — Stage 2 maps intent to actual columns
+        reasoning_block = ""
+        if stage1_reasoning:
+            reasoning_block = f"""
+Analytical plan (what to compute — no column names; map intent to actual column names from the tool fields listed above):
+{stage1_reasoning}
+
+"""
 
         prompt = f"""
 You are a reasoning agent. Decompose this analytics question into an ordered execution plan.
@@ -207,13 +326,16 @@ Rules:
   * Example: "FETCH: api_v1_orders_list status=COMPLETE created_on__gte=2024-01-01"
   * Example: "FETCH: api_v1_seller_locations_list is_active=true"
   * Use each tool's "Filters:" list — only pass params the tool actually supports
-  * Dates use ISO format YYYY-MM-DD. Today is 2026-04-09.
+  * Dates use ISO format YYYY-MM-DD. Today is {datetime.now().strftime("%Y-%m-%d")}.
   * Filtering server-side is MUCH faster than downloading all rows and filtering in SQL — always prefer it
+  * IMPORTANT: Large tables (orders, user_addresses, seller_products, etc.) can have hundreds of thousands of rows. The fetch is capped at 100,000 rows. For any question involving order history, cohort analysis, or retention, ALWAYS add a date range filter (e.g. created_on__gte=2024-01-01) to avoid hitting the cap and getting incomplete data.
   * You can reference a field from a previous FETCH result as a filter value using FETCH_N.field_name
     - Example: "FETCH: api_v1_user_groups_list id=FETCH_0.user_group"
     - Example: "FETCH: api_v1_users_list user_group=FETCH_0.user_group"
     - The field must exist in that FETCH step's listed columns
     - This reads the first row's value from that column at runtime — use only for scalar FK fields
+    - FETCH_N resolves exactly ONE value (the first row). Never use it to pass a list of IDs.
+      For multi-value lookups, fetch the full dataset and filter in a COMPUTE step instead.
 - COMPUTE steps: "COMPUTE: <valid DuckDB SQL query>"
   * Use read_csv_auto('FETCH_N') where N = 0-indexed position in the temp_files list
     - FETCH_0 = result of the 1st FETCH step
@@ -226,6 +348,7 @@ Rules:
   * For JSON array columns, use json_extract(col, '$[*].field') to access items
   * For dot-notation columns (e.g. conversion_rates.overall), quote them: "conversion_rates.overall"
   * Use epoch() for date arithmetic: epoch(col::TIMESTAMP) gives Unix seconds; divide by 86400 for days
+  * When combining two independently fetched datasets on any key that is not guaranteed to exist in both sources, ALWAYS use FULL OUTER JOIN with COALESCE, never INNER JOIN — INNER JOIN silently drops rows present in only one source and produces incomplete results with no error or warning. Only use INNER JOIN when you explicitly want to restrict results to rows that exist in both datasets (e.g. filtering orders to only those with a matching seller).
   * SELECT only — no INSERT/UPDATE/DELETE
   * Return a concise, focused result
 - FETCH steps must come before COMPUTE steps that depend on them
@@ -234,8 +357,7 @@ Rules:
 
 AVAILABLE MCP TOOLS:
 {focused_tools}
-
-Question: {state["question"]}
+{reasoning_block}Question: {state["question"]}
 
 Output JSON array only:
 """.strip()
@@ -249,10 +371,21 @@ Output JSON array only:
                 raw = raw[4:]
         raw = raw.strip()
 
+        # LLM sometimes uses backslash-newline continuation inside JSON strings — strip them
+        raw_clean = re.sub(r'\\\n\s*', ' ', raw)
         try:
-            sentences = json.loads(raw)
+            sentences = json.loads(raw_clean)
         except Exception:
-            sentences = [line.strip() for line in raw.splitlines() if line.strip().startswith(("FETCH:", "COMPUTE:"))]
+            # Fallback: extract quoted or unquoted FETCH/COMPUTE lines
+            sentences = []
+            for line in raw_clean.splitlines():
+                s = line.strip().strip('"').rstrip('",').strip()
+                if s.startswith(("FETCH:", "COMPUTE:")):
+                    sentences.append(s)
+
+        if not sentences:
+            console.print(f"[red]  → Stage 2 returned empty plan — raw response:[/]")
+            console.print(Panel(raw[:500], style="red dim", padding=(0, 2)))
 
         console.print(f"[blue]  → Plan ({len(sentences)} steps):[/]")
         for i, s in enumerate(sentences):
@@ -286,8 +419,10 @@ Rules:
 - Use only columns that exist in the CSV (check the error for actual column names)
 - Quote dot-notation column names with double quotes (e.g. "conversion_rates.overall")
 - Use json_extract for JSON array columns
+- CTEs (WITH clauses) are valid and preferred — do NOT split them into separate files
+- NEVER reference tables by name (first_product, first_order, etc.) — only read_csv_auto(path) or CTEs defined in the same query
 
-Output only the corrected sentence starting with "COMPUTE: SELECT ..." — nothing else.
+Output only the corrected sentence starting with "COMPUTE: " followed by valid DuckDB SQL (may start with WITH for CTEs) — nothing else.
 """.strip()
         else:
             # FETCH error — rephrase or switch tool
@@ -299,13 +434,19 @@ Error: {state["error"]}
 Already fetched files: {state["temp_files"]}
 
 AVAILABLE MCP TOOLS relevant to this step:
-{get_relevant_tools(current, top_k=5)}
+{get_relevant_tools(current, top_k=5)[0]}
 
 Output only the rephrased sentence (starting with FETCH:):
 """.strip()
 
         response = llm.invoke(prompt)
         new_sentence = response.content.strip()
+        # Strip markdown fences the LLM sometimes wraps around its output
+        if new_sentence.startswith("```"):
+            new_sentence = new_sentence.split("```")[1]
+            if new_sentence.startswith(("sql", "json")):
+                new_sentence = new_sentence[new_sentence.index("\n")+1:]
+            new_sentence = new_sentence.strip()
         sentences = state["logic_sentences"].copy()
         sentences[state["current_idx"]] = new_sentence
         console.print(f"[yellow]  → Rephrased: {new_sentence[:120]}[/]")
@@ -369,8 +510,12 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         # Read-only: call Downstream API directly with optional server-side filters
         path = tool_info["path"]
         console.print(f"[green]  → Direct API: GET {_API_BASE}{path}[/]")
+
+        # Pre-flight: get row count, estimate time, validate filters
+        total_count = _preflight_check(path, api_params, has_filters=bool(api_params))
+
         try:
-            all_rows = fetch_all_pages(path, params=api_params)
+            all_rows = fetch_all_pages(path, params=api_params, total_count=total_count)
         except Exception as e:
             return {**state, "error": f"API fetch error ({path}): {e}"}
     else:
@@ -388,8 +533,11 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
         except Exception as e:
             return {**state, "error": f"MCP tool error: {e}"}
 
-    cap_note = f" [yellow](capped at {MAX_FETCH_ROWS})[/]" if len(all_rows) >= MAX_FETCH_ROWS else ""
-    console.print(f"[green] → Got {len(all_rows)} rows[/]")
+    capped = len(all_rows) >= MAX_FETCH_ROWS
+    cap_note = f" [yellow](capped at {MAX_FETCH_ROWS})[/]" if capped else ""
+    console.print(f"[green] → Got {len(all_rows)} rows{cap_note}[/]")
+    if capped:
+        console.print(f"[bold yellow]  ⚠ WARNING: fetch hit the {MAX_FETCH_ROWS}-row cap — results are INCOMPLETE. Add server-side date/status filters to get full data.[/]")
 
     # Save to temp CSV — named by fetch order (not sentence index)
     fetch_idx = len(state["temp_files"])
@@ -397,7 +545,7 @@ def mcp_fetch_node(state: AgentState) -> AgentState:
     df = pd.json_normalize(all_rows)
     df.to_csv(filename, index=False)
     console.print(f"[green]  → Saved {len(df)} rows → {filename}[/]")
-    console.print(f"[green]  → Columns: {list(df.columns)}[/]")
+    # console.print(f"[green]  → Columns: {list(df.columns)}[/]")
 
     return {
         **state,
@@ -462,6 +610,10 @@ def execution_node(state: AgentState) -> AgentState:
 # ─────────────────────────────────────────────
 def synthesize_node(state: AgentState) -> AgentState:
     _print_step("💡  SYNTHESIZING FINAL ANSWER", "yellow")
+
+    if not state["step_results"]:
+        console.print("[red]  → No step results — cannot synthesize answer.[/]")
+        return {**state, "final_answer": "Could not answer: no data was fetched or computed. The execution plan may have been empty or all steps failed."}
 
     results_block = "\n".join(state["step_results"])
 
